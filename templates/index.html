@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h1>Dashboard</h1>
+
+<div class="card">
+    <h3>Recent Invoices</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Invoice #</th>
+                <th>Client</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Amount</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for inv in invoices %}
+            <tr>
+                <td>{{ inv[1] }}</td>
+                <td>{{ inv[2] }}</td>
+                <td>{{ inv[3] }}</td>
+                <td><span class="status-badge status-{{ inv[4] }}">{{ inv[4] }}</span></td>
+                <td>${{ "%.2f"|format(inv[5]) }}</td>
+                <td>
+                    <a href="{{ url_for('download_pdf', invoice_number=inv[1]) }}"
+                        class="btn btn-sm btn-secondary">PDF</a>
+                    <a href="{{ url_for('edit_invoice', invoice_id=inv[0]) }}" class="btn btn-sm btn-secondary">Edit</a>
+                    {% if inv[4] != 'Paid' %}
+                    <a href="{{ url_for('mark_paid', invoice_number=inv[1]) }}" class="btn btn-sm btn-success">Mark
+                        Paid</a>
+                    {% endif %}
+                    <a href="{{ url_for('delete_invoice', invoice_id=inv[0]) }}" class="btn btn-sm btn-primary"
+                        style="background-color: #ef4444;" onclick="return confirm('Are you sure?')">Delete</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" style="text-align: center;">No invoices found. Create one to get started!</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

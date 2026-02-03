@@ -1,0 +1,95 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h1>Create Invoice</h1>
+
+<div class="card">
+    <form action="{{ url_for('create_invoice') }}" method="POST">
+        <div class="form-group">
+            <label>Select Client</label>
+            <select name="client_id" required>
+                {% for client in clients %}
+                <option value="{{ client[0] }}">{{ client[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Invoice Number</label>
+            <input type="text" name="invoice_number" placeholder="e.g. INV-2026-001" required>
+        </div>
+
+        <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 10px; font-weight: bold; cursor: pointer;">
+                <input type="checkbox" name="vat_exempt" value="true">
+                VAT 0% (Export Service)
+            </label>
+            <small class="text-muted" style="display: block; margin-top: 5px;">
+                Check this if the invoice is for an export service (0% VAT under Lebanese law).
+            </small>
+        </div>
+
+        <div style="display: flex; gap: 20px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Date Issued</label>
+                <input type="date" name="date_issued" value="{{ today }}">
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>Due Date</label>
+                <input type="date" name="due_date">
+            </div>
+        </div>
+
+        <h3>Line Items</h3>
+        <div id="line-items-container">
+            <div class="item-row">
+                <input type="text" name="description[]" class="item-desc" placeholder="Description" required>
+                <input type="number" name="quantity[]" class="item-qty" placeholder="Qty" step="0.1" required>
+                <input type="number" name="rate[]" class="item-rate" placeholder="Rate ($)" step="0.01" required>
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-secondary btn-sm" onclick="addItem()">+ Add Item</button>
+
+        <div style="margin-top: 30px; text-align: right;">
+            <button type="submit" class="btn btn-primary">Create Invoice</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    const clientSelect = document.querySelector('select[name="client_id"]');
+
+    function updateInvoiceNumber() {
+        const clientId = clientSelect.value;
+        if (clientId) {
+            fetch(`/api/next-invoice-number?client_id=${clientId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.invoice_number) {
+                        document.querySelector('input[name="invoice_number"]').value = data.invoice_number;
+                    }
+                });
+        }
+    }
+
+    clientSelect.addEventListener('change', updateInvoiceNumber);
+
+    // Trigger on load
+    if (clientSelect.value) {
+        updateInvoiceNumber();
+    }
+
+    function addItem() {
+        const container = document.getElementById('line-items-container');
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        row.innerHTML = `
+            <input type="text" name="description[]" class="item-desc" placeholder="Description" required>
+            <input type="number" name="quantity[]" class="item-qty" placeholder="Qty" step="0.1" required>
+            <input type="number" name="rate[]" class="item-rate" placeholder="Rate ($)" step="0.01" required>
+        `;
+        container.appendChild(row);
+    }
+</script>
+{% endblock %}
