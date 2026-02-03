@@ -37,13 +37,40 @@ def open_browser():
 # Ensure DB creation and default settings
 with app.app_context():
     # Auto-migrate logic
+    # Auto-migrate logic
     if getattr(sys, 'frozen', False):
         # In frozen app, migrations are bundled in sys._MEIPASS/migrations
         migration_dir = os.path.join(sys._MEIPASS, 'migrations')
+        
+        # Setup logging to catch errors
+        log_path = os.path.join(os.path.dirname(sys.executable), 'startup_log.txt')
+        
         try:
+            with open(log_path, 'w') as f:
+                f.write(f"Starting migration from {migration_dir}\n")
+                f.write(f"Contents of migration dir: {os.listdir(migration_dir) if os.path.exists(migration_dir) else 'DIR NOT FOUND'}\n")
+            
             upgrade(directory=migration_dir)
+            
+            with open(log_path, 'a') as f:
+                f.write("Migration successful\n")
+                
         except Exception as e:
-            print(f"Migration failed: {e}")
+            with open(log_path, 'a') as f:
+                f.write(f"Migration failed: {e}\n")
+                import traceback
+                traceback.print_exc(file=f)
+            
+            # Fallback: If migration fails (e.g., weird PyInstaller issue), 
+            # try to create tables directly if they don't exist so app at least starts.
+            # This is a safety net for fresh installs.
+            try:
+                db.create_all()
+                with open(log_path, 'a') as f:
+                    f.write("Fallback db.create_all() executed\n")
+            except Exception as e2:
+                 with open(log_path, 'a') as f:
+                    f.write(f"Fallback create_all failed: {e2}\n")
     else:
         # In dev, migrations are in local directory
         # We don't force upgrade in dev to avoid accidental schema changes
@@ -242,7 +269,33 @@ def next_invoice_number():
     
     return {"invoice_number": invoice_number}
 
+@app.route('/shutdown', methods=['POST'])
+def shutdown():
+    shutdown_server = request.environ.get('werkzeug.server.shutdown')
+    if shutdown_server is None:
+        # Fallback for production/other WSGI or direct execution
+        import os, signal
+        os.kill(os.getpid(), signal.SIGINT)
+        return "Server shutting down..."
+    
+    shutdown_server()
+    return 'Server shutting down...'
+
 if __name__ == '__main__':
+    # Check if the port is already in use
+    import socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        sock.bind(("127.0.0.1", 5000))
+    except socket.error:
+        # Port is already in use, so the app is likely running.
+        # Just open the browser to the existing instance and exit.
+        print("Application is already running. Opening browser...")
+        open_browser()
+        sys.exit(0)
+    finally:
+        sock.close()
+
     # Only open browser automatically if frozen (executable) or if desired in dev
     if getattr(sys, 'frozen', False):
         Timer(1.5, open_browser).start()
