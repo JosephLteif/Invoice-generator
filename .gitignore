@@ -4,3 +4,8 @@ __pycache__/
 /invoices
 /invoices.db
 .vscode/
+
+# Build artifacts
+dist/
+build/
+*.spec

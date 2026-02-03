@@ -4,7 +4,20 @@ from pdf_builder import InvoicePDF
 import datetime
 import os
 
-app = Flask(__name__)
+import sys
+import webbrowser
+from threading import Timer
+
+# Adjust template_folder and static_folder for PyInstaller
+if getattr(sys, 'frozen', False):
+    template_folder = os.path.join(sys._MEIPASS, 'templates')
+    static_folder = os.path.join(sys._MEIPASS, 'static')
+    app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
+else:
+    app = Flask(__name__)
+
+def open_browser():
+    webbrowser.open_new('http://127.0.0.1:5000/')
 
 # Ensure DB is initialized
 db_manager.init_db()
@@ -200,4 +213,8 @@ def next_invoice_number():
     return {"invoice_number": invoice_number}
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    # Only open browser automatically if frozen (executable) or if desired in dev
+    if getattr(sys, 'frozen', False):
+        Timer(1.5, open_browser).start()
+    
+    app.run(debug=False, port=5000)

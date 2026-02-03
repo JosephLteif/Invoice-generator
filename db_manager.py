@@ -1,10 +1,24 @@
 import sqlite3
 import datetime
 
+import sys
+import os
+
 DB_NAME = "invoices.db"
 
+def get_base_path():
+    if getattr(sys, 'frozen', False):
+        # Running as compiled executable
+        return os.path.dirname(sys.executable)
+    else:
+        # Running as python script
+        return os.path.dirname(os.path.abspath(__file__))
+
+def get_db_path():
+    return os.path.join(get_base_path(), DB_NAME)
+
 def get_connection():
-    return sqlite3.connect(DB_NAME)
+    return sqlite3.connect(get_db_path())
 
 def init_db():
     conn = get_connection()

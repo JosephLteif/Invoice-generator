@@ -59,3 +59,25 @@ When you first run the application, verify your settings:
 ## License
 
 [MIT License](LICENSE)
+
+## Building an Executable
+
+To create a standalone executable for distribution:
+
+1.  **Install PyInstaller** (if not already installed):
+    ```bash
+    pip install pyinstaller
+    ```
+
+2.  **Build the Executable**:
+    Run the following command in the project root:
+    ```bash
+    python -m PyInstaller --name "InvoiceGenerator" --onefile --windowed --add-data "templates;templates" --add-data "static;static" app.py
+    ```
+
+3.  **Locate the Output**:
+    The executable will be generated in the `dist` folder:
+    `dist\InvoiceGenerator.exe`
+
+4.  **Distribution**:
+    You can zip and send `InvoiceGenerator.exe`. It does not require Python to be installed on the target machine.
