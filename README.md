@@ -34,7 +34,19 @@ A simple and efficient Invoice Generator built with Python and Flask. Designed t
     pip install -r requirements.txt
     ```
 
-4.  **Run the application**:
+4.  **Initialize the Database**:
+    ```bash
+    # Initialize the database migration repository (if not exists)
+    flask db init 
+    
+    # Generate migration script (if models changed)
+    flask db migrate -m "Initial migration"
+    
+    # Apply migrations
+    flask db upgrade
+    ```
+
+5.  **Run the application**:
     ```bash
     python app.py
     ```
@@ -72,7 +84,7 @@ To create a standalone executable for distribution:
 2.  **Build the Executable**:
     Run the following command in the project root:
     ```bash
-    python -m PyInstaller --name "InvoiceGenerator" --onefile --windowed --add-data "templates;templates" --add-data "static;static" app.py
+    python -m PyInstaller --name "InvoiceGenerator" --onefile --windowed --add-data "templates;templates" --add-data "static;static" --add-data "migrations;migrations" app.py
     ```
 
 3.  **Locate the Output**:

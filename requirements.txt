@@ -1,2 +1,4 @@
 flask
 reportlab
+flask-sqlalchemy
+flask-migrate

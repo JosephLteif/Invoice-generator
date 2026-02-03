@@ -1,11 +1,31 @@
+# Python
 *.pyc
 __pycache__/
 .venv/
-/invoices
-/invoices.db
-.vscode/
+env/
+venv/
+*.spec
 
-# Build artifacts
+# Flask
+instance/
+.webassets-cache
+.env
+
+# Database
+/invoices.db
+
+# IDEs
+.vscode/
+.idea/
+
+# Distribution
 dist/
 build/
-*.spec
+*.egg-info/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# App specific
+/invoices/

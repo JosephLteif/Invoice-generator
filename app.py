@@ -3,10 +3,11 @@ import db_manager
 from pdf_builder import InvoicePDF
 import datetime
 import os
-
 import sys
 import webbrowser
 from threading import Timer
+from flask_migrate import Migrate, upgrade
+from models import db
 
 # Adjust template_folder and static_folder for PyInstaller
 if getattr(sys, 'frozen', False):
@@ -16,11 +17,40 @@ if getattr(sys, 'frozen', False):
 else:
     app = Flask(__name__)
 
-def open_browser():
-    webbrowser.open_new('http://127.0.0.1:5000/')
+# Database Config
+def get_db_path():
+    if getattr(sys, 'frozen', False):
+        base_path = os.path.dirname(sys.executable)
+    else:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_path, 'invoices.db')
 
-# Ensure DB is initialized
-db_manager.init_db()
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{get_db_path()}'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db.init_app(app)
+migrate = Migrate(app, db)
+
+def open_browser():
+    webbrowser.open_new("http://127.0.0.1:5000")
+
+# Ensure DB creation and default settings
+with app.app_context():
+    # Auto-migrate logic
+    if getattr(sys, 'frozen', False):
+        # In frozen app, migrations are bundled in sys._MEIPASS/migrations
+        migration_dir = os.path.join(sys._MEIPASS, 'migrations')
+        try:
+            upgrade(directory=migration_dir)
+        except Exception as e:
+            print(f"Migration failed: {e}")
+    else:
+        # In dev, migrations are in local directory
+        # We don't force upgrade in dev to avoid accidental schema changes
+        # blocking startup, but could be added if desired.
+        pass
+
+    db_manager.init_db()
 
 @app.route('/')
 def dashboard():
