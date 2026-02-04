@@ -193,3 +193,110 @@ input, select, textarea {
     background-color: #d1fae5;
     color: #065f46;
 }
+
+/* Tabs */
+.tabs {
+    display: flex;
+    border-bottom: 2px solid #e9ecef;
+    margin-bottom: 20px;
+    gap: 10px;
+}
+
+.tab-btn {
+    padding: 10px 20px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #6c757d;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+    margin-bottom: -2px;
+}
+
+.tab-btn:hover {
+    color: #495057;
+    background-color: rgba(0,0,0,0.02);
+    border-radius: 5px 5px 0 0;
+}
+
+.tab-btn.active {
+    color: #007bff;
+    border-bottom: 2px solid #007bff;
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Enhanced Cards (Data Management) */
+.data-card {
+    background: #fff;
+    border: 1px solid #e1e4e8;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    transition: transform 0.2s, box-shadow 0.2s;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.data-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.data-card h4 {
+    margin-top: 0;
+    color: #343a40;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.data-card p {
+    color: #6c757d;
+    font-size: 0.9rem;
+    flex-grow: 1;
+    margin-bottom: 20px;
+}
+
+.file-drop-area {
+    border: 2px dashed #ddd;
+    border-radius: 6px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 15px;
+    transition: border-color 0.3s;
+    background: #fafbfc;
+}
+
+.file-drop-area:hover {
+    border-color: #007bff;
+    background: #f0f7ff;
+}
+
+.file-drop-area input[type="file"] {
+    display: none;
+}
+
+.fake-btn {
+    background: #e9ecef;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: #495057;
+    cursor: pointer;
+}
