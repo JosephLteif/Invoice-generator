@@ -1,0 +1,16 @@
+services:
+  invoice-generator:
+    image: josephlteif/invoice-generator:latest
+    container_name: invoice-generator
+    ports:
+      - "5000:5000"
+    volumes:
+      - invoice_db:/app/instance
+      - invoices_files:/app/invoices
+    environment:
+      - FLASK_ENV=production
+    restart: always
+
+volumes:
+  invoice_db:
+  invoices_files:

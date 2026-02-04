@@ -93,3 +93,26 @@ To create a standalone executable for distribution:
 
 4.  **Distribution**:
     You can zip and send `InvoiceGenerator.exe`. It does not require Python to be installed on the target machine.
+
+## Docker Deployment
+
+To build and push the Docker image to Docker Hub manually:
+
+1.  **Build the image**:
+    ```bash
+    docker-compose build
+    ```
+
+2.  **Tag the image**:
+    ```bash
+    docker tag invoice-generator-app:latest josephlteif/invoice-generator:latest
+    ```
+
+3.  **Push to Docker Hub**:
+    ```bash
+    docker push josephlteif/invoice-generator:latest
+    ```
+
+4.  **On your Server**:
+    - Update your Portainer stack or run `docker pull josephlteif/invoice-generator:latest`.
+    - Restart the container.

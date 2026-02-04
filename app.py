@@ -21,9 +21,13 @@ else:
 def get_db_path():
     if getattr(sys, 'frozen', False):
         base_path = os.path.dirname(sys.executable)
+        return os.path.join(base_path, 'invoices.db')
     else:
+        # standard flask practice: instance folder
         base_path = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(base_path, 'invoices.db')
+        instance_path = os.path.join(base_path, 'instance')
+        os.makedirs(instance_path, exist_ok=True)
+        return os.path.join(instance_path, 'invoices.db')
 
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{get_db_path()}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -72,10 +76,18 @@ with app.app_context():
                  with open(log_path, 'a') as f:
                     f.write(f"Fallback create_all failed: {e2}\n")
     else:
-        # In dev, migrations are in local directory
-        # We don't force upgrade in dev to avoid accidental schema changes
-        # blocking startup, but could be added if desired.
-        pass
+        # In non-frozen environments (dev or Docker), apply migrations if they exist
+        migration_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'migrations')
+        if os.path.exists(migration_dir):
+            try:
+                upgrade(directory=migration_dir)
+                print("Database migrated successfully.")
+            except Exception as e:
+                print(f"Migration failed: {e}. Attempting db.create_all() as fallback.")
+                db.create_all()
+        else:
+            db.create_all()
+            print("Database tables created using db.create_all().")
 
     db_manager.init_db()
 
