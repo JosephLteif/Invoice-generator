@@ -60,6 +60,32 @@
 
     <hr style="margin: 30px 0;">
 
+    <h3>Data Management</h3>
+    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 300px;">
+            <h4>Export Data</h4>
+            <div class="card" style="padding: 15px; background: #f8f9fa;">
+                <p>Download a backup of all clients, invoices, and settings.</p>
+                <a href="{{ url_for('export_data') }}" class="btn btn-secondary" style="background-color: #6c757d; border-color: #6c757d;">Export to JSON</a>
+            </div>
+        </div>
+        <div style="flex: 1; min-width: 300px;">
+            <h4>Import Data</h4>
+            <div class="card" style="padding: 15px; background: #fff3cd;">
+                <p>Restore data from backup. <strong>Overwrites existing data.</strong></p>
+                <form action="{{ url_for('import_data') }}" method="POST" enctype="multipart/form-data" 
+                      onsubmit="return confirm('WARNING: This will DELETE all current data and replace it with the imported file. This action cannot be undone. Proceed?');">
+                    <div class="form-group">
+                        <input type="file" name="file" accept=".json" required>
+                    </div>
+                    <button type="submit" class="btn btn-warning" style="background-color: #ffc107; border-color: #ffc107; color: #212529;">Import JSON</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <hr style="margin: 30px 0;">
+
     <h3>Application Contol</h3>
     <p>The application runs in the background. Use this button to fully close it.</p>
     <form action="{{ url_for('shutdown') }}" method="POST"

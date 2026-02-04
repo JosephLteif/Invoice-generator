@@ -5,6 +5,8 @@ import datetime
 import os
 import sys
 import webbrowser
+import json
+import io
 from threading import Timer
 from flask_migrate import Migrate, upgrade
 from models import db
@@ -17,17 +19,19 @@ if getattr(sys, 'frozen', False):
 else:
     app = Flask(__name__)
 
+app.secret_key = 'super_secret_key_for_invoices_123'
+
 # Database Config
 def get_db_path():
     if getattr(sys, 'frozen', False):
         base_path = os.path.dirname(sys.executable)
         return os.path.join(base_path, 'invoices.db')
     else:
-        # standard flask practice: instance folder
+        # In dev, use the local directory (or instance if desired, but user has data in root)
         base_path = os.path.dirname(os.path.abspath(__file__))
-        instance_path = os.path.join(base_path, 'instance')
-        os.makedirs(instance_path, exist_ok=True)
-        return os.path.join(instance_path, 'invoices.db')
+        # Check if instance db exists, else use root. 
+        # Actually, for simplicity and to match the user's existing "invoices.db" in root:
+        return os.path.join(base_path, 'invoices.db')
 
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{get_db_path()}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -167,6 +171,44 @@ def settings():
     current_settings = db_manager.get_settings()
     return render_template('settings.html', settings=current_settings)
 
+@app.route('/settings/export')
+def export_data():
+    data = db_manager.export_data()
+    json_str = json.dumps(data, indent=4)
+    mem = io.BytesIO()
+    mem.write(json_str.encode('utf-8'))
+    mem.seek(0)
+    
+    filename = f"invoice_data_{datetime.date.today()}.json"
+    return send_file(
+        mem, 
+        as_attachment=True, 
+        download_name=filename,
+        mimetype='application/json'
+    )
+
+@app.route('/settings/import', methods=['POST'])
+def import_data():
+    if 'file' not in request.files:
+        return "No file uploaded", 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return "No file selected", 400
+        
+    if file:
+        try:
+            data = json.load(file)
+            success, message = db_manager.import_data(data)
+            if success:
+                return redirect(url_for('settings'))
+            else:
+                return f"Error importing data: {message}", 500
+        except json.JSONDecodeError:
+            return "Invalid JSON file", 400
+            
+    return redirect(url_for('settings'))
+
 @app.route('/invoices/<invoice_number>/pdf')
 def download_pdf(invoice_number):
     invoice_data = db_manager.get_invoice_details(invoice_number)
@@ -179,7 +221,10 @@ def download_pdf(invoice_number):
     client_name = invoice_data['client']['name']
     # Sanitize client name for folder safely
     safe_client_name = "".join([c for c in client_name if c.isalpha() or c.isdigit() or c==' ']).strip()
-    folder_path = os.path.join("invoices", safe_client_name)
+    
+    # Use absolute path for invoices directory
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    folder_path = os.path.join(base_dir, "invoices", safe_client_name)
     os.makedirs(folder_path, exist_ok=True)
     
     filename = f"{invoice_number}.pdf"

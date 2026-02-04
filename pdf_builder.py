@@ -10,7 +10,8 @@ import os
 class InvoicePDF:
     def __init__(self, invoice_data, settings_data):
         self.invoice_data = invoice_data
-        self.settings = settings_data
+        # Ensure all settings values are strings (handle None from DB)
+        self.settings = {k: (v if v is not None else "") for k, v in settings_data.items()}
         
         # Register standard font for unicode support (Windows)
         # Try finding Arial, fallback to Helvetica if not found (though less likely to support special chars)
@@ -78,7 +79,8 @@ class InvoicePDF:
         # Bill To & Details Section
         # ------------------------------------------------------------------
         # Bill To (Left)
-        client_address_lines = self.invoice_data['client']['address'].split('\n')
+        client_address = self.invoice_data['client']['address'] or ""
+        client_address_lines = client_address.split('\n')
         bill_to_content = [
             Paragraph("Bill To:", ParagraphStyle('BillToLabel', parent=normal_style, textColor=colors.gray)),
             Paragraph(self.invoice_data['client']['name'], bold_style)
@@ -96,8 +98,8 @@ class InvoicePDF:
             return Paragraph(text, style if style else ParagraphStyle('DetailValue', parent=normal_style, alignment=2))
 
         details_data = [
-            [detail_label("Invoice Date:"), detail_value(self.invoice_data['date_issued'])],
-            [detail_label("Due Date:"), detail_value(self.invoice_data['due_date'])],
+            [detail_label("Invoice Date:"), detail_value(str(self.invoice_data['date_issued']))],
+            [detail_label("Due Date:"), detail_value(str(self.invoice_data['due_date']))],
             [detail_label("Tax Identification Number:"), detail_value(self.settings.get('tax_id', ''))],
             [Paragraph("Balance Due:", ParagraphStyle('BalLabel', parent=bold_style, alignment=2)), 
              Paragraph(f"US${self.invoice_data['total_amount']:.2f}", ParagraphStyle('BalValue', parent=bold_style, alignment=2))]
@@ -137,7 +139,7 @@ class InvoicePDF:
         items_data = [items_header]
         
         for item in self.invoice_data['line_items']:
-            description = item[2]
+            description = item[2] or ""
             quantity = str(item[3])
             rate = f"US${item[4]:.2f}"
             amount = f"US${item[5]:.2f}"

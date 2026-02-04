@@ -96,10 +96,10 @@ def get_invoice_details(invoice_number):
     return {
         'id': invoice.id,
         'client': {
-            'name': invoice.client.name,
-            'address': invoice.client.address,
-            'email': invoice.client.email,
-            'phone': invoice.client.phone
+            'name': invoice.client.name if invoice.client else "Unknown Client",
+            'address': invoice.client.address if invoice.client else "",
+            'email': invoice.client.email if invoice.client else "",
+            'phone': invoice.client.phone if invoice.client else ""
         },
         'invoice_number': invoice.invoice_number,
         'date_issued': invoice.date_issued,
@@ -213,3 +213,121 @@ def get_client_invoice_count(client_id, year=None):
         query = query.filter(extract('year', Invoice.date_issued) == year)
     
     return query.count()
+
+def export_data():
+    """Export all data to a dictionary."""
+    data = {
+        "clients": [],
+        "invoices": [],
+        "invoice_items": [],
+        "settings": []
+    }
+    
+    # Clients
+    for c in Client.query.all():
+        data["clients"].append({
+            "id": c.id,
+            "name": c.name,
+            "address": c.address,
+            "email": c.email,
+            "phone": c.phone,
+            "category": c.category,
+            "created_at": c.created_at.isoformat() if c.created_at else None
+        })
+        
+    # Invoices
+    for i in Invoice.query.all():
+        data["invoices"].append({
+            "id": i.id,
+            "client_id": i.client_id,
+            "invoice_number": i.invoice_number,
+            "date_issued": i.date_issued.isoformat() if i.date_issued else None,
+            "due_date": i.due_date.isoformat() if i.due_date else None,
+            "status": i.status,
+            "total_amount": i.total_amount,
+            "vat_exempt": i.vat_exempt
+        })
+        
+    # Invoice Items
+    for item in InvoiceItem.query.all():
+        data["invoice_items"].append({
+            "id": item.id,
+            "invoice_id": item.invoice_id,
+            "description": item.description,
+            "quantity": item.quantity,
+            "rate": item.rate,
+            "amount": item.amount
+        })
+        
+    # Settings
+    for s in Settings.query.all():
+        data["settings"].append({
+            "key": s.key,
+            "value": s.value
+        })
+        
+    return data
+
+def import_data(data):
+    """Import data from dictionary, replacing existing data."""
+    try:
+        # 1. Clear existing data
+        # Delete children first to avoid FK constraints issues if cascade isn't perfect
+        InvoiceItem.query.delete()
+        Invoice.query.delete()
+        Client.query.delete()
+        Settings.query.delete()
+        
+        # 2. Insert Settings
+        for s_data in data.get("settings", []):
+            db.session.add(Settings(key=s_data["key"], value=s_data["value"]))
+            
+        # 3. Insert Clients
+        for c_data in data.get("clients", []):
+            created_at = datetime.fromisoformat(c_data["created_at"]) if c_data.get("created_at") else None
+            client = Client(
+                id=c_data["id"],
+                name=c_data["name"],
+                address=c_data["address"],
+                email=c_data["email"],
+                phone=c_data["phone"],
+                category=c_data["category"],
+                created_at=created_at
+            )
+            db.session.add(client)
+            
+        # 4. Insert Invoices
+        for i_data in data.get("invoices", []):
+            date_issued = datetime.fromisoformat(i_data["date_issued"]).date() if i_data.get("date_issued") else None
+            due_date = datetime.fromisoformat(i_data["due_date"]).date() if i_data.get("due_date") else None
+            
+            invoice = Invoice(
+                id=i_data["id"],
+                client_id=i_data["client_id"],
+                invoice_number=i_data["invoice_number"],
+                date_issued=date_issued,
+                due_date=due_date,
+                status=i_data["status"],
+                total_amount=i_data["total_amount"],
+                vat_exempt=i_data.get("vat_exempt", False)
+            )
+            db.session.add(invoice)
+            
+        # 5. Insert Invoice Items
+        for item_data in data.get("invoice_items", []):
+            item = InvoiceItem(
+                id=item_data["id"],
+                invoice_id=item_data["invoice_id"],
+                description=item_data["description"],
+                quantity=item_data["quantity"],
+                rate=item_data["rate"],
+                amount=item_data["amount"]
+            )
+            db.session.add(item)
+            
+        db.session.commit()
+        return True, "Data imported successfully."
+        
+    except Exception as e:
+        db.session.rollback()
+        return False, str(e)
