@@ -19,14 +19,18 @@ if getattr(sys, 'frozen', False):
 else:
     app = Flask(__name__)
 
-app.secret_key = 'super_secret_key_for_invoices_123'
-
 # Database Config
 def get_db_path():
     if getattr(sys, 'frozen', False):
         base_path = os.path.dirname(sys.executable)
         return os.path.join(base_path, 'invoices.db')
     else:
+        # In production (Docker), use the instance folder which is volume-mapped
+        if os.environ.get('FLASK_ENV') == 'production':
+            # Ensure instance path exists
+            os.makedirs(app.instance_path, exist_ok=True)
+            return os.path.join(app.instance_path, 'invoices.db')
+            
         # In dev, use the local directory (or instance if desired, but user has data in root)
         base_path = os.path.dirname(os.path.abspath(__file__))
         # Check if instance db exists, else use root. 
