@@ -2,3 +2,5 @@ flask
 reportlab
 flask-sqlalchemy
 flask-migrate
+requests
+Flask-APScheduler

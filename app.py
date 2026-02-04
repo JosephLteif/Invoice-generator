@@ -9,7 +9,9 @@ import json
 import io
 from threading import Timer
 from flask_migrate import Migrate, upgrade
-from models import db
+from models import db, Invoice, Client
+import requests
+from flask_apscheduler import APScheduler
 
 # Adjust template_folder and static_folder for PyInstaller
 if getattr(sys, 'frozen', False):
@@ -42,6 +44,42 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 migrate = Migrate(app, db)
+scheduler = APScheduler()
+
+def send_discord_notification(webhook_url, invoice, client_name):
+    try:
+        data = {
+            "content": f"📢 **Invoice Reminder**\nInvoice **#{invoice.invoice_number}** for **{client_name}** is due today ({invoice.due_date}) and has not been paid yet.\nTotal Amount: {invoice.total_amount}"
+        }
+        requests.post(webhook_url, json=data)
+    except Exception as e:
+        print(f"Failed to send Discord notification: {e}")
+
+def check_overdue_invoices():
+    with app.app_context():
+        # Get Webhook URL
+        settings = db_manager.get_settings()
+        webhook_url = settings.get('discord_webhook_url')
+        
+        if not webhook_url:
+            return
+
+        today = datetime.date.today()
+        # Find invoices due today that are NOT paid
+        overdue_invoices = Invoice.query.filter(
+            Invoice.due_date == today,
+            Invoice.status != 'Paid'
+        ).all()
+        
+        for invoice in overdue_invoices:
+            client_name = invoice.client.name if invoice.client else "Unknown Client"
+            send_discord_notification(webhook_url, invoice, client_name)
+
+# Initialize Scheduler
+scheduler.init_app(app)
+# Run check daily at 9:00 AM
+scheduler.add_job(id='invoice_check', func=check_overdue_invoices, trigger='cron', hour=9)
+scheduler.start()
 
 def open_browser():
     webbrowser.open_new("http://127.0.0.1:5000")
@@ -168,12 +206,31 @@ def settings():
             'bank_swift': request.form.get('bank_swift'),
             'vat_percentage': request.form.get('vat_percentage'),
             'tax_id': request.form.get('tax_id'),
+            'discord_webhook_url': request.form.get('discord_webhook_url'),
         }
         db_manager.update_settings(settings_dict)
         return redirect(url_for('settings'))
 
     current_settings = db_manager.get_settings()
     return render_template('settings.html', settings=current_settings)
+
+@app.route('/settings/test-discord', methods=['POST'])
+def test_discord_webhook():
+    webhook_url = request.form.get('discord_webhook_url')
+    if not webhook_url:
+        return "Missing Webhook URL", 400
+    
+    try:
+        data = {
+            "content": "✅ **Test Notification**\nThis is a test message from Invoice Generator."
+        }
+        resp = requests.post(webhook_url, json=data)
+        if resp.status_code == 204 or resp.status_code == 200:
+            return "Test message sent successfully!"
+        else:
+            return f"Discord returned error: {resp.status_code} {resp.text}", 500
+    except Exception as e:
+        return f"Failed to send: {e}", 500
 
 @app.route('/settings/export')
 def export_data():

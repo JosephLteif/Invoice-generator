@@ -55,8 +55,96 @@
             <input type="number" name="vat_percentage" step="0.01" value="{{ settings.get('vat_percentage', '11') }}">
         </div>
 
-        <button type="submit" class="btn btn-primary">Save Settings</button>
+        <h3>Notifications</h3>
+        <div class="form-group">
+            <label>Discord Webhook URL</label>
+            <input type="text" name="discord_webhook_url" value="{{ settings.get('discord_webhook_url', '') }}"
+                placeholder="https://discord.com/api/webhooks/...">
+        </div>
+
+        <div class="form-group" style="display: flex; gap: 10px;">
+            <button type="submit" class="btn btn-primary">Save Settings</button>
+            <button type="button" id="testWebhookBtn" class="btn btn-secondary">Test Webhook</button>
+        </div>
     </form>
+
+    <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 1000;"></div>
+
+    <script>
+        document.getElementById('testWebhookBtn').addEventListener('click', async function () {
+            const btn = this;
+            const originalText = btn.innerText;
+            const urlInput = document.querySelector('input[name="discord_webhook_url"]');
+            const webhookUrl = urlInput.value;
+
+            if (!webhookUrl) {
+                showToast("Please enter a Webhook URL first.", "error");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Testing...";
+
+            const formData = new FormData();
+            formData.append('discord_webhook_url', webhookUrl);
+
+            try {
+                const response = await fetch("{{ url_for('test_discord_webhook') }}", {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const text = await response.text();
+
+                if (response.ok) {
+                    showToast(text, "success");
+                } else {
+                    showToast("Error: " + text, "error");
+                }
+            } catch (error) {
+                showToast("Network error occurred.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        });
+
+        function showToast(message, type) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            toast.style.padding = '15px 25px';
+            toast.style.marginTop = '10px';
+            toast.style.borderRadius = '5px';
+            toast.style.color = '#fff';
+            toast.style.fontWeight = '500';
+            toast.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s ease-in-out';
+
+            if (type === 'success') {
+                toast.style.backgroundColor = '#28a745';
+            } else {
+                toast.style.backgroundColor = '#dc3545';
+            }
+
+            toast.innerText = message;
+
+            container.appendChild(toast);
+
+            // Trigger reflow
+            void toast.offsetWidth;
+
+            toast.style.opacity = '1';
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        }
+    </script>
 
     <hr style="margin: 30px 0;">
 
@@ -66,19 +154,21 @@
             <h4>Export Data</h4>
             <div class="card" style="padding: 15px; background: #f8f9fa;">
                 <p>Download a backup of all clients, invoices, and settings.</p>
-                <a href="{{ url_for('export_data') }}" class="btn btn-secondary" style="background-color: #6c757d; border-color: #6c757d;">Export to JSON</a>
+                <a href="{{ url_for('export_data') }}" class="btn btn-secondary"
+                    style="background-color: #6c757d; border-color: #6c757d;">Export to JSON</a>
             </div>
         </div>
         <div style="flex: 1; min-width: 300px;">
             <h4>Import Data</h4>
             <div class="card" style="padding: 15px; background: #fff3cd;">
                 <p>Restore data from backup. <strong>Overwrites existing data.</strong></p>
-                <form action="{{ url_for('import_data') }}" method="POST" enctype="multipart/form-data" 
-                      onsubmit="return confirm('WARNING: This will DELETE all current data and replace it with the imported file. This action cannot be undone. Proceed?');">
+                <form action="{{ url_for('import_data') }}" method="POST" enctype="multipart/form-data"
+                    onsubmit="return confirm('WARNING: This will DELETE all current data and replace it with the imported file. This action cannot be undone. Proceed?');">
                     <div class="form-group">
                         <input type="file" name="file" accept=".json" required>
                     </div>
-                    <button type="submit" class="btn btn-warning" style="background-color: #ffc107; border-color: #ffc107; color: #212529;">Import JSON</button>
+                    <button type="submit" class="btn btn-warning"
+                        style="background-color: #ffc107; border-color: #ffc107; color: #212529;">Import JSON</button>
                 </form>
             </div>
         </div>

@@ -16,7 +16,8 @@ def init_db():
             "bank_iban": "LB00 0000 0000 0000 0000 0000 0000",
             "bank_branch": "Bank Branch",
             "bank_swift": "SWIFTCODE",
-            "vat_percentage": "11"
+            "vat_percentage": "11",
+            "discord_webhook_url": ""
         }
         for k, v in defaults.items():
             db.session.add(Settings(key=k, value=v))
