@@ -33,7 +33,7 @@
                 {% for inv in invoices %}
                 <tr>
                     <td>{{ inv[1] }}</td>
-                    <td><a href="{{ url_for('client_invoices', client_id=inv[7]) }}"
+                    <td><a href="{{ url_for('client_invoices', client_id=inv[8]) }}"
                             style="color: var(--primary-color); text-decoration: none; font-weight: 500;">{{ inv[2]
                             }}</a></td>
                     <td>{{ inv[3] }}</td>

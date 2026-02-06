@@ -189,9 +189,16 @@ class InvoicePDF:
         ]
 
         if vat_exempt:
+             # Use custom reason or fallback to default setting or fallback to generic
+             reason = self.invoice_data.get('vat_exempt_reason') 
+             if not reason:
+                 reason = self.settings.get('default_vat_exempt_reason')
+             if not reason:
+                 reason = "VAT Exempt"
+                 
              totals_data.append([
                  Paragraph("VAT Exemption:", ParagraphStyle('VatExemptLabel', parent=bold_style, fontSize=8, textColor=colors.gray)),
-                 Paragraph("under current Lebanese law,\nno VAT for export services", ParagraphStyle('VatExemptVal', parent=normal_style, fontSize=8, textColor=colors.gray))
+                 Paragraph(str(reason), ParagraphStyle('VatExemptVal', parent=normal_style, fontSize=8, textColor=colors.gray))
              ])
         
         # Align to the right side of the page

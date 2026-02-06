@@ -17,6 +17,7 @@ def init_db():
             "bank_branch": "Bank Branch",
             "bank_swift": "SWIFTCODE",
             "vat_percentage": "11",
+            "default_vat_exempt_reason": "under current Lebanese law,\nno VAT for export services",
             "discord_webhook_url": ""
         }
         for k, v in defaults.items():
@@ -40,7 +41,7 @@ def get_client(client_id):
         return (c.id, c.name, c.address, c.email, c.phone, c.category, c.created_at)
     return None
 
-def create_invoice(client_id, invoice_number, date_issued, due_date, items, vat_exempt=False, status='Draft'):
+def create_invoice(client_id, invoice_number, date_issued, due_date, items, vat_exempt=False, vat_exempt_reason=None, status='Draft'):
     invoice = Invoice(
         client_id=client_id,
         invoice_number=invoice_number,
@@ -49,7 +50,8 @@ def create_invoice(client_id, invoice_number, date_issued, due_date, items, vat_
         status=status,
         # Calculate total
         total_amount=sum(i['quantity'] * i['rate'] for i in items),
-        vat_exempt=vat_exempt
+        vat_exempt=vat_exempt,
+        vat_exempt_reason=vat_exempt_reason
     )
     db.session.add(invoice)
     db.session.flush() # get ID
@@ -86,6 +88,7 @@ def get_invoices(status=None):
             inv.status, 
             inv.total_amount, 
             inv.vat_exempt,
+            inv.vat_exempt_reason,
             client.id
         ))
     return invoices
@@ -107,6 +110,7 @@ def get_client_invoices(client_id, status=None):
             inv.status, 
             inv.total_amount, 
             inv.vat_exempt,
+            inv.vat_exempt_reason,
             inv.client_id
         ))
     return invoices
@@ -135,6 +139,7 @@ def get_invoice_details(invoice_number):
         'status': invoice.status,
         'total_amount': invoice.total_amount,
         'vat_exempt': invoice.vat_exempt,
+        'vat_exempt_reason': invoice.vat_exempt_reason,
         'line_items': items
     }
 
@@ -193,7 +198,7 @@ def get_invoice_by_id(invoice_id):
         'line_items': items
     }
 
-def update_invoice(invoice_id, client_id, invoice_number, date_issued, due_date, items, vat_exempt=False, status='Draft'):
+def update_invoice(invoice_id, client_id, invoice_number, date_issued, due_date, items, vat_exempt=False, vat_exempt_reason=None, status='Draft'):
     invoice = Invoice.query.get(invoice_id)
     if not invoice:
         return
@@ -205,6 +210,7 @@ def update_invoice(invoice_id, client_id, invoice_number, date_issued, due_date,
     invoice.total_amount = sum(i['quantity'] * i['rate'] for i in items)
     invoice.status = status
     invoice.vat_exempt = vat_exempt
+    invoice.vat_exempt_reason = vat_exempt_reason
     
     # Replace items: simplest way is delete all and re-add
     for item in invoice.items:
@@ -273,7 +279,8 @@ def export_data():
             "due_date": i.due_date.isoformat() if i.due_date else None,
             "status": i.status,
             "total_amount": i.total_amount,
-            "vat_exempt": i.vat_exempt
+            "vat_exempt": i.vat_exempt,
+            "vat_exempt_reason": i.vat_exempt_reason
         })
         
     # Invoice Items
@@ -337,7 +344,8 @@ def import_data(data):
                 due_date=due_date,
                 status=i_data["status"],
                 total_amount=i_data["total_amount"],
-                vat_exempt=i_data.get("vat_exempt", False)
+                vat_exempt=i_data.get("vat_exempt", False),
+                vat_exempt_reason=i_data.get("vat_exempt_reason")
             )
             db.session.add(invoice)
             

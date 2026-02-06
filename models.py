@@ -25,6 +25,7 @@ class Invoice(db.Model):
     status = db.Column(db.String, default='Draft')
     total_amount = db.Column(db.Float)
     vat_exempt = db.Column(db.Boolean, default=False)
+    vat_exempt_reason = db.Column(db.String)
     
     items = db.relationship('InvoiceItem', backref='invoice', lazy=True, cascade="all, delete-orphan")
 

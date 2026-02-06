@@ -31,13 +31,39 @@
 
         <div class="form-group">
             <label style="display: flex; align-items: center; gap: 10px; font-weight: bold; cursor: pointer;">
-                <input type="checkbox" name="vat_exempt" value="true">
+                <input type="checkbox" name="vat_exempt" id="vatExemptCheckbox" value="true"
+                    onchange="toggleVatReason()">
                 VAT 0% (Export Service)
             </label>
+            <div id="vatReasonContainer" class="hidden" style="margin-top: 10px;">
+                <label>Exemption Reason (for PDF):</label>
+                <input type="text" name="vat_exempt_reason" id="vatReasonInput" placeholder="e.g. Export Service"
+                    value="">
+            </div>
             <small class="text-muted" style="display: block; margin-top: 5px;">
-                Check this if the invoice is for an export service (0% VAT under Lebanese law).
+                Check this if the invoice is for an export service (0% VAT).
             </small>
         </div>
+
+        <script>
+            function toggleVatReason() {
+                const checkbox = document.getElementById('vatExemptCheckbox');
+                const container = document.getElementById('vatReasonContainer');
+                const input = document.getElementById('vatReasonInput');
+                // Use the string literal for the default reason passed from backend
+                const defaultReason = {{ default_reason | tojson | safe
+            }};
+
+            if (checkbox.checked) {
+                container.classList.remove('hidden');
+                if (!input.value) {
+                    input.value = defaultReason;
+                }
+            } else {
+                container.classList.add('hidden');
+            }
+            }
+        </script>
 
         <div class="form-row">
             <div class="form-group flex-1">

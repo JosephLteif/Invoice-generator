@@ -166,6 +166,14 @@ textarea {
     font-family: inherit;
 }
 
+input[type="checkbox"] {
+    width: auto;
+}
+
+.hidden {
+    display: none;
+}
+
 .line-items {
     margin-top: 20px;
 }

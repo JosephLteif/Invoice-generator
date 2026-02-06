@@ -218,6 +218,7 @@ def create_invoice():
         date_issued = datetime.datetime.strptime(date_issued_str, '%Y-%m-%d').date() if date_issued_str else datetime.date.today()
         due_date = datetime.datetime.strptime(due_date_str, '%Y-%m-%d').date() if due_date_str else date_issued + datetime.timedelta(days=14)
         vat_exempt = request.form.get('vat_exempt') == 'true'
+        vat_exempt_reason = request.form.get('vat_exempt_reason')
         status = request.form.get('status', 'Draft')
         
         # Process Items
@@ -236,12 +237,14 @@ def create_invoice():
         
         if items:
             db_manager.create_invoice(
-                client_id, invoice_number, date_issued, due_date, items, vat_exempt, status
+                client_id, invoice_number, date_issued, due_date, items, vat_exempt, vat_exempt_reason, status
             )
             return redirect(url_for('dashboard'))
             
     clients = db_manager.get_clients()
-    return render_template('create_invoice.html', clients=clients, today=datetime.date.today())
+    settings = db_manager.get_settings()
+    default_reason = settings.get('default_vat_exempt_reason', '')
+    return render_template('create_invoice.html', clients=clients, today=datetime.date.today(), default_reason=default_reason)
 
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
@@ -258,6 +261,7 @@ def settings():
             'bank_swift': request.form.get('bank_swift'),
             'vat_percentage': request.form.get('vat_percentage'),
             'tax_id': request.form.get('tax_id'),
+            'default_vat_exempt_reason': request.form.get('default_vat_exempt_reason'),
             'discord_webhook_url': request.form.get('discord_webhook_url'),
         }
         db_manager.update_settings(settings_dict)
@@ -398,6 +402,7 @@ def edit_invoice(invoice_id):
         date_issued = datetime.datetime.strptime(date_issued_str, '%Y-%m-%d').date() if date_issued_str else datetime.date.today()
         due_date = datetime.datetime.strptime(due_date_str, '%Y-%m-%d').date() if due_date_str else date_issued + datetime.timedelta(days=14)
         vat_exempt = request.form.get('vat_exempt') == 'true'
+        vat_exempt_reason = request.form.get('vat_exempt_reason')
         status = request.form.get('status', 'Draft')
         
         descriptions = request.form.getlist('description[]')
@@ -415,13 +420,15 @@ def edit_invoice(invoice_id):
         
         if items:
             db_manager.update_invoice(
-                invoice_id, client_id, invoice_number, date_issued, due_date, items, vat_exempt, status
+                invoice_id, client_id, invoice_number, date_issued, due_date, items, vat_exempt, vat_exempt_reason, status
             )
             return redirect(url_for('dashboard'))
 
     invoice = db_manager.get_invoice_by_id(invoice_id)
     clients = db_manager.get_clients()
-    return render_template('edit_invoice.html', invoice=invoice, clients=clients)
+    settings = db_manager.get_settings()
+    default_reason = settings.get('default_vat_exempt_reason', '')
+    return render_template('edit_invoice.html', invoice=invoice, clients=clients, default_reason=default_reason)
 
 @app.route('/api/next-invoice-number')
 def next_invoice_number():

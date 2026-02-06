@@ -79,6 +79,11 @@
                     <input type="number" name="vat_percentage" step="0.01"
                         value="{{ settings.get('vat_percentage', '11') }}">
                 </div>
+                <div class="form-group">
+                    <label>Default VAT Exempt Message</label>
+                    <textarea name="default_vat_exempt_reason" rows="3"
+                        placeholder="Reason to display on PDF when VAT is 0%">{{ settings.get('default_vat_exempt_reason', '') }}</textarea>
+                </div>
                 <button type="submit" class="btn btn-primary">Save Settings</button>
             </div>
         </div>
