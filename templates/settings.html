@@ -93,7 +93,7 @@
                         placeholder="https://discord.com/api/webhooks/...">
                 </div>
 
-                <div class="form-group" style="display: flex; gap: 10px;">
+                <div class="form-group form-row">
                     <button type="submit" class="btn btn-primary">Save Settings</button>
                     <button type="button" id="testWebhookBtn" class="btn btn-secondary">Test Webhook</button>
                 </div>
@@ -105,9 +105,9 @@
     <div id="system" class="tab-content">
         <div class="card" style="background: transparent; box-shadow: none; border: none; padding: 0;">
             <h3>Data Management</h3>
-            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div class="card-grid">
                 <!-- Export Card -->
-                <div style="flex: 1; min-width: 300px;">
+                <div class="data-card-wrapper">
                     <div class="data-card">
                         <h4>Export Data</h4>
                         <p>Download a full backup of your clients, invoices, and settings as a JSON file.</p>
@@ -117,7 +117,7 @@
                 </div>
 
                 <!-- Import Card -->
-                <div style="flex: 1; min-width: 300px;">
+                <div class="data-card-wrapper">
                     <div class="data-card">
                         <h4>Import Data</h4>
                         <p>Restore data from a backup file. <strong>Warning: This overwrites all current data.</strong>

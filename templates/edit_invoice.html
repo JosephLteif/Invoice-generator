@@ -20,6 +20,16 @@
         </div>
 
         <div class="form-group">
+            <label>Status</label>
+            <select name="status">
+                <option value="Draft" {% if invoice.status=='Draft' %}selected{% endif %}>Draft</option>
+                <option value="Sent" {% if invoice.status=='Sent' %}selected{% endif %}>Sent</option>
+                <option value="Paid" {% if invoice.status=='Paid' %}selected{% endif %}>Paid</option>
+                <option value="Overdue" {% if invoice.status=='Overdue' %}selected{% endif %}>Overdue</option>
+            </select>
+        </div>
+
+        <div class="form-group">
             <label style="display: flex; align-items: center; gap: 10px; font-weight: bold; cursor: pointer;">
                 <input type="checkbox" name="vat_exempt" value="true" {% if invoice.vat_exempt %}checked{% endif %}>
                 VAT 0% (Export Service)
@@ -29,12 +39,12 @@
             </small>
         </div>
 
-        <div style="display: flex; gap: 20px; align-items: flex-end;">
-            <div class="form-group" style="flex: 1;">
+        <div class="form-row items-end">
+            <div class="form-group flex-1">
                 <label>Date Issued</label>
                 <input type="date" name="date_issued" value="{{ invoice.date_issued }}">
             </div>
-            <div class="form-group" style="flex: 1;">
+            <div class="form-group flex-1">
                 <label>Due Date</label>
                 <input type="date" name="due_date" value="{{ invoice.due_date }}">
             </div>

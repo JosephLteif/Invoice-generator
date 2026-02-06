@@ -138,12 +138,23 @@ with app.app_context():
     db_manager.init_db()
 
 @app.route('/')
+@app.route('/dashboard')
 def dashboard():
-    invoices = db_manager.get_invoices()
-    return render_template('index.html', invoices=invoices)
+    status_filter = request.args.get('status', 'All')
+    invoices = db_manager.get_invoices(status=status_filter)
+    statuses = ['All', 'Draft', 'Paid', 'Sent', 'Overdue']
+    return render_template('index.html', 
+                          invoices=invoices, 
+                          statuses=statuses, 
+                          current_status=status_filter)
 
-@app.route('/clients', methods=['GET', 'POST'])
+@app.route('/clients')
 def clients():
+    clients = db_manager.get_clients()
+    return render_template('clients.html', clients=clients)
+
+@app.route('/clients/new', methods=['GET', 'POST'])
+def add_client():
     if request.method == 'POST':
         name = request.form.get('name')
         address = request.form.get('address')
@@ -152,9 +163,24 @@ def clients():
         category = request.form.get('category')
         db_manager.add_client(name, address, email, phone, category)
         return redirect(url_for('clients'))
+    return render_template('add_client.html')
+
+@app.route('/clients/<int:client_id>/invoices')
+def client_invoices(client_id):
+    status_filter = request.args.get('status', 'All')
+    client = db_manager.get_client(client_id)
+    if not client:
+        return "Client not found", 404
+        
+    invoices = db_manager.get_client_invoices(client_id, status=status_filter)
+    # Available statuses for filtering (could be dynamic but these are common)
+    statuses = ['All', 'Draft', 'Paid', 'Sent', 'Overdue']
     
-    clients = db_manager.get_clients()
-    return render_template('clients.html', clients=clients)
+    return render_template('client_invoices.html', 
+                          client=client, 
+                          invoices=invoices, 
+                          current_status=status_filter,
+                          statuses=statuses)
 
 @app.route('/invoices/new', methods=['GET', 'POST'])
 def create_invoice():
@@ -167,6 +193,7 @@ def create_invoice():
         date_issued = datetime.datetime.strptime(date_issued_str, '%Y-%m-%d').date() if date_issued_str else datetime.date.today()
         due_date = datetime.datetime.strptime(due_date_str, '%Y-%m-%d').date() if due_date_str else date_issued + datetime.timedelta(days=14)
         vat_exempt = request.form.get('vat_exempt') == 'true'
+        status = request.form.get('status', 'Draft')
         
         # Process Items
         descriptions = request.form.getlist('description[]')
@@ -184,7 +211,7 @@ def create_invoice():
         
         if items:
             db_manager.create_invoice(
-                client_id, invoice_number, date_issued, due_date, items, vat_exempt
+                client_id, invoice_number, date_issued, due_date, items, vat_exempt, status
             )
             return redirect(url_for('dashboard'))
             
@@ -297,6 +324,15 @@ def download_pdf(invoice_number):
     
     return send_file(full_path, as_attachment=True)
 
+@app.route('/invoices/<invoice_number>/status', methods=['POST'])
+def update_status(invoice_number):
+    new_status = request.form.get('status')
+    if new_status:
+        db_manager.update_invoice_status(invoice_number, new_status)
+    
+    # Redirect back to where the user came from
+    return redirect(request.referrer or url_for('dashboard'))
+
 @app.route('/invoices/<invoice_number>/pay')
 def mark_paid(invoice_number):
     db_manager.update_invoice_status(invoice_number, "Paid")
@@ -337,6 +373,7 @@ def edit_invoice(invoice_id):
         date_issued = datetime.datetime.strptime(date_issued_str, '%Y-%m-%d').date() if date_issued_str else datetime.date.today()
         due_date = datetime.datetime.strptime(due_date_str, '%Y-%m-%d').date() if due_date_str else date_issued + datetime.timedelta(days=14)
         vat_exempt = request.form.get('vat_exempt') == 'true'
+        status = request.form.get('status', 'Draft')
         
         descriptions = request.form.getlist('description[]')
         quantities = request.form.getlist('quantity[]')
@@ -353,7 +390,7 @@ def edit_invoice(invoice_id):
         
         if items:
             db_manager.update_invoice(
-                invoice_id, client_id, invoice_number, date_issued, due_date, items, vat_exempt
+                invoice_id, client_id, invoice_number, date_issued, due_date, items, vat_exempt, status
             )
             return redirect(url_for('dashboard'))
 

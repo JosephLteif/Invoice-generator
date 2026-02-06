@@ -40,13 +40,13 @@ def get_client(client_id):
         return (c.id, c.name, c.address, c.email, c.phone, c.category, c.created_at)
     return None
 
-def create_invoice(client_id, invoice_number, date_issued, due_date, items, vat_exempt=False):
+def create_invoice(client_id, invoice_number, date_issued, due_date, items, vat_exempt=False, status='Draft'):
     invoice = Invoice(
         client_id=client_id,
         invoice_number=invoice_number,
         date_issued=date_issued,
         due_date=due_date,
-        status='Draft',
+        status=status,
         # Calculate total
         total_amount=sum(i['quantity'] * i['rate'] for i in items),
         vat_exempt=vat_exempt
@@ -67,8 +67,13 @@ def create_invoice(client_id, invoice_number, date_issued, due_date, items, vat_
     db.session.commit()
     return invoice.id
 
-def get_invoices():
-    results = db.session.query(Invoice, Client).join(Client).order_by(Invoice.date_issued.desc()).all()
+def get_invoices(status=None):
+    query = db.session.query(Invoice, Client).join(Client)
+    
+    if status and status != 'All':
+        query = query.filter(Invoice.status == status)
+        
+    results = query.order_by(Invoice.date_issued.desc()).all()
     
     # Map to tuple structure expected by template
     invoices = []
@@ -80,7 +85,29 @@ def get_invoices():
             inv.date_issued, 
             inv.status, 
             inv.total_amount, 
-            inv.vat_exempt
+            inv.vat_exempt,
+            client.id
+        ))
+    return invoices
+
+def get_client_invoices(client_id, status=None):
+    query = Invoice.query.filter_by(client_id=client_id)
+    if status and status != 'All':
+        query = query.filter_by(status=status)
+    
+    results = query.order_by(Invoice.date_issued.desc()).all()
+    
+    invoices = []
+    for inv in results:
+        invoices.append((
+            inv.id, 
+            inv.invoice_number, 
+            inv.client.name, 
+            inv.date_issued, 
+            inv.status, 
+            inv.total_amount, 
+            inv.vat_exempt,
+            inv.client_id
         ))
     return invoices
 
@@ -166,7 +193,7 @@ def get_invoice_by_id(invoice_id):
         'line_items': items
     }
 
-def update_invoice(invoice_id, client_id, invoice_number, date_issued, due_date, items, vat_exempt=False):
+def update_invoice(invoice_id, client_id, invoice_number, date_issued, due_date, items, vat_exempt=False, status='Draft'):
     invoice = Invoice.query.get(invoice_id)
     if not invoice:
         return
@@ -176,7 +203,7 @@ def update_invoice(invoice_id, client_id, invoice_number, date_issued, due_date,
     invoice.date_issued = date_issued
     invoice.due_date = due_date
     invoice.total_amount = sum(i['quantity'] * i['rate'] for i in items)
-    invoice.status = 'Draft'
+    invoice.status = status
     invoice.vat_exempt = vat_exempt
     
     # Replace items: simplest way is delete all and re-add

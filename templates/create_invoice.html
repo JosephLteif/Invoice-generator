@@ -20,6 +20,16 @@
         </div>
 
         <div class="form-group">
+            <label>Status</label>
+            <select name="status">
+                <option value="Draft">Draft</option>
+                <option value="Sent">Sent</option>
+                <option value="Paid">Paid</option>
+                <option value="Overdue">Overdue</option>
+            </select>
+        </div>
+
+        <div class="form-group">
             <label style="display: flex; align-items: center; gap: 10px; font-weight: bold; cursor: pointer;">
                 <input type="checkbox" name="vat_exempt" value="true">
                 VAT 0% (Export Service)
@@ -29,12 +39,12 @@
             </small>
         </div>
 
-        <div style="display: flex; gap: 20px;">
-            <div class="form-group" style="flex: 1;">
+        <div class="form-row">
+            <div class="form-group flex-1">
                 <label>Date Issued</label>
                 <input type="date" name="date_issued" value="{{ today }}">
             </div>
-            <div class="form-group" style="flex: 1;">
+            <div class="form-group flex-1">
                 <label>Due Date</label>
                 <input type="date" name="due_date">
             </div>

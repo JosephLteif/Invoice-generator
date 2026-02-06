@@ -90,7 +90,7 @@ h1 {
 .card {
     background-color: var(--card-bg);
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     padding: 25px;
     margin-bottom: 30px;
 }
@@ -102,7 +102,8 @@ table {
     margin-top: 10px;
 }
 
-th, td {
+th,
+td {
     text-align: left;
     padding: 12px;
     border-bottom: 1px solid var(--border-color);
@@ -155,7 +156,9 @@ label {
     font-weight: 500;
 }
 
-input, select, textarea {
+input,
+select,
+textarea {
     width: 100%;
     padding: 10px;
     border: 1px solid var(--border-color);
@@ -173,25 +176,59 @@ input, select, textarea {
     margin-bottom: 10px;
 }
 
-.item-desc { flex: 3; }
-.item-qty { flex: 1; }
-.item-rate { flex: 1; }
+.item-desc {
+    flex: 3;
+}
+
+.item-qty {
+    flex: 1;
+}
+
+.item-rate {
+    flex: 1;
+}
 
 .status-badge {
     padding: 2px 8px;
     border-radius: 12px;
     font-size: 0.75rem;
     font-weight: 600;
+    border: 1px solid transparent;
+    font-family: inherit;
+}
+
+select.status-badge {
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 15px;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22currentColor%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 4px center;
 }
 
 .status-Draft {
     background-color: #fef3c7;
     color: #92400e;
+    border-color: #fde68a;
 }
 
 .status-Paid {
     background-color: #d1fae5;
     color: #065f46;
+    border-color: #a7f3d0;
+}
+
+.status-Sent {
+    background-color: #dbeafe;
+    color: #1e40af;
+    border-color: #bfdbfe;
+}
+
+.status-Overdue {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border-color: #fecaca;
 }
 
 /* Tabs */
@@ -217,7 +254,7 @@ input, select, textarea {
 
 .tab-btn:hover {
     color: #495057;
-    background-color: rgba(0,0,0,0.02);
+    background-color: rgba(0, 0, 0, 0.02);
     border-radius: 5px 5px 0 0;
 }
 
@@ -236,8 +273,15 @@ input, select, textarea {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Enhanced Cards (Data Management) */
@@ -246,7 +290,7 @@ input, select, textarea {
     border: 1px solid #e1e4e8;
     border-radius: 8px;
     padding: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
     transition: transform 0.2s, box-shadow 0.2s;
     height: 100%;
     display: flex;
@@ -255,7 +299,7 @@ input, select, textarea {
 
 .data-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .data-card h4 {
@@ -292,6 +336,31 @@ input, select, textarea {
     display: none;
 }
 
+.card-header,
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 15px;
+}
+
+.page-header h1 {
+    margin-bottom: 0;
+}
+
+@media (max-width: 500px) {
+    .card-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .card-header h1,
+    .card-header h3 {
+        margin-bottom: 5px;
+    }
+}
+
 .fake-btn {
     background: #e9ecef;
     padding: 5px 10px;
@@ -300,3 +369,270 @@ input, select, textarea {
     color: #495057;
     cursor: pointer;
 }
+
+/* Utility Classes for Flex layouts to replace inline styles */
+.form-row {
+    display: flex;
+    gap: 20px;
+}
+
+.flex-1 {
+    flex: 1;
+}
+
+/* Align items specific helper (for edit page refresh button) */
+.items-end {
+    align-items: flex-end;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+
+    /* Mobile Header behavior */
+    .sidebar {
+        position: sticky;
+        top: 0;
+        z-index: 900;
+        padding: 10px 15px;
+        width: 100%;
+    }
+
+    .brand h2 {
+        text-align: center;
+        margin-bottom: 10px;
+        font-size: 1.2rem;
+    }
+
+    .sidebar nav ul {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        justify-content: flex-start;
+        gap: 5px;
+        padding-bottom: 5px;
+        -webkit-overflow-scrolling: touch;
+        list-style: none;
+    }
+
+    .sidebar nav ul li {
+        margin-bottom: 0 !important;
+        flex-shrink: 0;
+    }
+
+    .sidebar nav a {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 4px;
+    }
+
+    /* Hide the "New Invoice" from menu on mobile as it's a FAB now */
+    .sidebar nav .nav-new-invoice {
+        display: none;
+    }
+
+    .content {
+        padding: 15px;
+        padding-bottom: 100px;
+        /* Space for FABs */
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: 10px;
+        /* smaller gap for vertical stack */
+    }
+
+    .item-row {
+        flex-direction: column;
+        background: #f9fafb;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #eee;
+        margin-bottom: 15px;
+    }
+
+    .item-desc,
+    .item-qty,
+    .item-rate {
+        margin-bottom: 10px;
+    }
+
+    /* Responsive Tables - horizontal scroll wrapper */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+        min-width: 600px;
+        /* Ensure table doesn't squish too much */
+    }
+
+    /* Scrollable Tabs on Mobile */
+    .tabs {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding-bottom: 5px;
+        /* space for scrollbar */
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .tabs button {
+        flex-shrink: 0;
+    }
+
+    /* Make data cards full width on mobile */
+    .data-card-wrapper {
+        min-width: 100%;
+    }
+
+    /* FABs visible only on mobile (or small screens) */
+    .fab-container {
+        display: flex;
+    }
+}
+
+/* Card Grid for Settings */
+.card-grid {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.data-card-wrapper {
+    flex: 1;
+    min-width: 300px;
+}
+
+/* Floating Action Buttons (Speed Dial) */
+.fab-container {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 2000;
+    /* High z-index to stay on top */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+}
+
+/* Main Toggle Button */
+.fab-main {
+    width: 60px;
+    height: 60px;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    position: relative;
+    z-index: 2002;
+    transition: transform 0.3s ease, background-color 0.3s;
+}
+
+.fab-main:hover {
+    background-color: var(--primary-hover);
+    transform: scale(1.05);
+}
+
+.fab-container.active .fab-main {
+    transform: rotate(45deg);
+    /* Turn + into x */
+    background-color: #ef4444;
+    /* Red color for close */
+}
+
+/* Options Wrapper */
+.fab-options {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    /* Let clicks pass through when closed */
+}
+
+/* Individual Option Buttons */
+.fab-option {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    background-color: white;
+    color: var(--text-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    font-size: 1.2rem;
+    opacity: 0;
+    z-index: 2001;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform: scale(0.5);
+    /* Start small */
+    top: 5px;
+    /* Center relative to main (60-50)/2 */
+    left: 5px;
+}
+
+.fab-option:hover {
+    background-color: #f3f4f6;
+}
+
+/* Labels (Tooltips) */
+.fab-label {
+    position: absolute;
+    right: 60px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+}
+
+.fab-container.active .fab-option {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+}
+
+.fab-container.active .fab-option:hover .fab-label {
+    opacity: 1;
+}
+
+/* Circular/Fan Animation Positions */
+/* First Item: Vertical (Up) */
+.fab-container.active .fab-option:nth-child(1) {
+    transform: translateY(-75px) scale(1);
+}
+
+/* Second Item: Diagonal (Top-Left) */
+.fab-container.active .fab-option:nth-child(2) {
+    transform: translate(-55px, -55px) scale(1);
+}
+
+/* Third Item (Future): Horizontal (Left)
+.fab-container.active .fab-option:nth-child(3) {
+    transform: translateX(-75px) scale(1);
+} */

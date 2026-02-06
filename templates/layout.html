@@ -21,7 +21,7 @@
                     <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
                     <li><a href="{{ url_for('clients') }}">Clients</a></li>
                     <li><a href="{{ url_for('settings') }}">Settings</a></li>
-                    <li><a href="{{ url_for('create_invoice') }}" class="btn-primary">New Invoice</a></li>
+                    </li>
                 </ul>
             </nav>
         </aside>
@@ -30,6 +30,30 @@
             {% block content %}{% endblock %}
         </main>
     </div>
-</body>
 
+    <div class="fab-container" id="fab-container">
+        <!-- Main Toggle Button -->
+        <button class="fab-main" onclick="toggleFab()" aria-label="Open Menu">
+            <span class="fab-icon">+</span>
+        </button>
+
+        <!-- Menu Options (Hidden by default) -->
+        <div class="fab-options">
+            <a href="{{ url_for('create_invoice') }}" class="fab-option" style="--delay: 0.1s;" title="New Invoice">
+                <span class="fab-label">Invoice</span>
+                <span class="fab-option-icon">📄</span>
+            </a>
+            <a href="{{ url_for('add_client') }}" class="fab-option" style="--delay: 0.2s;" title="New Client">
+                <span class="fab-label">Client</span>
+                <span class="fab-option-icon">👤</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function toggleFab() {
+            document.getElementById('fab-container').classList.toggle('active');
+        }
+    </script>
+</body>
 </html>
