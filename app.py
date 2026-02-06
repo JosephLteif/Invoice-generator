@@ -46,10 +46,19 @@ db.init_app(app)
 migrate = Migrate(app, db)
 scheduler = APScheduler()
 
-def send_discord_notification(webhook_url, invoice, client_name):
+def send_discord_notification(webhook_url, invoice, client_name, type='reminder'):
     try:
+        if type == 'overdue':
+            emoji = "🚨"
+            title = "**OVERDUE INVOICE ALERT**"
+            time_info = f"was due on **{invoice.due_date}**"
+        else:
+            emoji = "📢"
+            title = "**Invoice Reminder**"
+            time_info = f"is due **today** ({invoice.due_date})"
+
         data = {
-            "content": f"📢 **Invoice Reminder**\nInvoice **#{invoice.invoice_number}** for **{client_name}** is due today ({invoice.due_date}) and has not been paid yet.\nTotal Amount: {invoice.total_amount}"
+            "content": f"{emoji} {title}\nInvoice **#{invoice.invoice_number}** for **{client_name}** {time_info} and is unpaid.\nTotal Amount: ${invoice.total_amount:,.2f}"
         }
         requests.post(webhook_url, json=data)
     except Exception as e:
@@ -61,19 +70,35 @@ def check_overdue_invoices():
         settings = db_manager.get_settings()
         webhook_url = settings.get('discord_webhook_url')
         
-        if not webhook_url:
-            return
-
         today = datetime.date.today()
-        # Find invoices due today that are NOT paid
-        overdue_invoices = Invoice.query.filter(
+        
+        # 1. MARK AND NOTIFY NEWLY OVERDUE INVOICES (due_date < today)
+        newly_overdue = Invoice.query.filter(
+            Invoice.due_date < today,
+            Invoice.status != 'Paid',
+            Invoice.status != 'Overdue'
+        ).all()
+        
+        for invoice in newly_overdue:
+            invoice.status = 'Overdue'
+            if webhook_url:
+                client_name = invoice.client.name if invoice.client else "Unknown Client"
+                send_discord_notification(webhook_url, invoice, client_name, type='overdue')
+        
+        # 2. SEND REMINDERS FOR INVOICES DUE TODAY
+        due_today = Invoice.query.filter(
             Invoice.due_date == today,
             Invoice.status != 'Paid'
         ).all()
         
-        for invoice in overdue_invoices:
-            client_name = invoice.client.name if invoice.client else "Unknown Client"
-            send_discord_notification(webhook_url, invoice, client_name)
+        for invoice in due_today:
+            if webhook_url:
+                client_name = invoice.client.name if invoice.client else "Unknown Client"
+                send_discord_notification(webhook_url, invoice, client_name, type='reminder')
+        
+        if newly_overdue:
+            db.session.commit()
+            print(f"Checked invoices: {len(newly_overdue)} marked as Overdue.")
 
 # Initialize Scheduler
 scheduler.init_app(app)
