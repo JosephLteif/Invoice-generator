@@ -1,23 +1,37 @@
-.venv
+\# Python
 __pycache__
-.git
-.gitignore
-Dockerfile
-docker-compose.yml
-.dockerignore
-dist
-build
-*.spec
-invoices.db
-invoices/
 *.pyc
 *.pyo
 *.pyd
-.db
-.sqlite
+.venv
 venv/
 env/
-instance/
+
+# Data and Database
+backend/data/
+*.db
+*.sqlite
+
+# Frontend
+frontend/node_modules/
+frontend/.angular/
+frontend/dist/
+
+# Distribution
+dist
+build
+*.spec
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Testing
 .pytest_cache
 .coverage
 htmlcov/

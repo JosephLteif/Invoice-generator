@@ -1,0 +1,36 @@
+<div class="page-header">
+    <h1>{{ isEditMode ? 'Edit Client' : 'Add New Client' }}</h1>
+    <a routerLink="/clients" class="btn btn-secondary">Back to List</a>
+</div>
+
+<div class="card">
+    <form (ngSubmit)="onSubmit()" #clientForm="ngForm">
+        <div class="form-group">
+            <label for="name">Client Name</label>
+            <input type="text" id="name" name="name" [(ngModel)]="client.name" required>
+        </div>
+        <div class="form-group">
+            <label for="address">Address</label>
+            <textarea id="address" name="address" rows="3" [(ngModel)]="client.address"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" [(ngModel)]="client.email">
+        </div>
+        <div class="form-group">
+            <label for="phone">Phone</label>
+            <input type="text" id="phone" name="phone" [(ngModel)]="client.phone">
+        </div>
+        <div class="form-group">
+            <label for="category">Category</label>
+            <input type="text" id="category" name="category" placeholder="e.g. Corporate, Personal"
+                [(ngModel)]="client.category">
+        </div>
+        <div style="margin-top: 20px;">
+            <button type="submit" class="btn btn-primary" [disabled]="!clientForm.form.valid">
+                {{ isEditMode ? 'Update Client' : 'Add Client' }}
+            </button>
+            <a routerLink="/clients" class="btn btn-secondary" style="margin-left: 10px;">Cancel</a>
+        </div>
+    </form>
+</div>

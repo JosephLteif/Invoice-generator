@@ -639,8 +639,3 @@ select.status-badge {
 .fab-container.active .fab-option:nth-child(2) {
     transform: translate(-55px, -55px) scale(1);
 }
-
-/* Third Item (Future): Horizontal (Left)
-.fab-container.active .fab-option:nth-child(3) {
-    transform: translateX(-75px) scale(1);
-} */

@@ -1,0 +1,151 @@
+/* Main App Layout */
+.container {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 250px;
+  background-color: #1e3a8a;
+  color: white;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.brand {
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brand h2 {
+  color: white;
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.logo {
+  width: 32px;
+  height: 32px;
+}
+
+nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+nav li {
+  margin-bottom: 0.5rem;
+}
+
+nav a {
+  color: #cbd5e1;
+  text-decoration: none;
+  display: block;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+
+nav a:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+nav a.active {
+  background-color: white;
+  color: #1e3a8a;
+  font-weight: 500;
+}
+
+.content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  background-color: #f8fafc;
+}
+
+/* FAB Styles */
+.fab-container {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1rem;
+  z-index: 1000;
+}
+
+.fab-main {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #1e3a8a;
+  color: white;
+  border: none;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+}
+
+.fab-main:hover {
+  transform: scale(1.1);
+}
+
+.fab-icon {
+  font-size: 24px;
+}
+
+.fab-options {
+  display: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s;
+}
+
+.fab-container.active .fab-options {
+  display: flex;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.fab-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+}
+
+.fab-label {
+  background-color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.25rem;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e3a8a;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.fab-option-icon {
+  width: 40px;
+  height: 40px;
+  background-color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}

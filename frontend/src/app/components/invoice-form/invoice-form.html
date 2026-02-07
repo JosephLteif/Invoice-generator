@@ -1,0 +1,84 @@
+<h1>{{ isEditMode ? 'Edit Invoice' : 'Create Invoice' }}</h1>
+
+<div class="card">
+    <form (ngSubmit)="onSubmit()" #invoiceForm="ngForm">
+        <div class="form-group">
+            <label for="client_id">Select Client</label>
+            <select id="client_id" name="client_id" [(ngModel)]="invoice.client_id" (change)="onClientChange()"
+                required>
+                <option [ngValue]="0" disabled>Select a client</option>
+                <option *ngFor="let client of clients" [ngValue]="client.id">{{ client.name }}</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="invoice_number">Invoice Number</label>
+            <input type="text" id="invoice_number" name="invoice_number" [(ngModel)]="invoice.invoice_number"
+                placeholder="e.g. INV-2026-001" required>
+        </div>
+
+        <div class="form-group">
+            <label for="status">Status</label>
+            <select id="status" name="status" [(ngModel)]="invoice.status">
+                <option value="Draft">Draft</option>
+                <option value="Sent">Sent</option>
+                <option value="Paid">Paid</option>
+                <option value="Overdue">Overdue</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 10px; font-weight: bold; cursor: pointer;">
+                <input type="checkbox" id="vat_exempt" name="vat_exempt" [(ngModel)]="invoice.vat_exempt"
+                    (change)="onVatExemptChange()">
+                VAT 0% (Export Service)
+            </label>
+            <div *ngIf="invoice.vat_exempt" style="margin-top: 10px;">
+                <label for="vat_exempt_reason">Exemption Reason (for PDF):</label>
+                <input type="text" id="vat_exempt_reason" name="vat_exempt_reason"
+                    [(ngModel)]="invoice.vat_exempt_reason" placeholder="e.g. Export Service">
+            </div>
+            <small class="text-muted" style="display: block; margin-top: 5px;">
+                Check this if the invoice is for an export service (0% VAT).
+            </small>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group flex-1">
+                <label for="date_issued">Date Issued</label>
+                <input type="date" id="date_issued" name="date_issued" [(ngModel)]="invoice.date_issued">
+            </div>
+            <div class="form-group flex-1">
+                <label for="due_date">Due Date</label>
+                <input type="date" id="due_date" name="due_date" [(ngModel)]="invoice.due_date">
+            </div>
+            <div class="form-group">
+                <button type="button" class="btn btn-info btn-sm" (click)="refreshDates()"
+                    style="margin-bottom: 5px;">Refresh Dates</button>
+            </div>
+        </div>
+
+        <h3>Line Items</h3>
+        <div id="line-items-container">
+            <div class="item-row" *ngFor="let item of invoice.items; let i = index; trackBy: trackByIndex">
+                <input type="text" name="description-{{i}}" [(ngModel)]="item.description" class="item-desc"
+                    placeholder="Description" required>
+                <input type="number" name="quantity-{{i}}" [(ngModel)]="item.quantity" class="item-qty"
+                    placeholder="Qty" step="0.1" required>
+                <input type="number" name="rate-{{i}}" [(ngModel)]="item.rate" class="item-rate" placeholder="Rate ($)"
+                    step="0.01" required>
+                <button type="button" class="btn btn-sm btn-danger" (click)="removeItem(i)"
+                    *ngIf="invoice.items!.length > 1">X</button>
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-secondary btn-sm" (click)="addItem()">+ Add Item</button>
+
+        <div style="margin-top: 30px; text-align: right;">
+            <button type="submit" class="btn btn-primary" [disabled]="!invoiceForm.form.valid">
+                {{ isEditMode ? 'Update Invoice' : 'Create Invoice' }}
+            </button>
+            <a routerLink="/dashboard" class="btn btn-secondary" style="margin-left: 10px;">Cancel</a>
+        </div>
+    </form>
+</div>

@@ -1,0 +1,38 @@
+<div class="container">
+  <aside class="sidebar">
+    <div class="brand">
+      <img src="logo.svg" alt="Logo" class="logo">
+      <h2>Invoicer</h2>
+    </div>
+    <nav>
+      <ul>
+        <li><a routerLink="/dashboard" routerLinkActive="active">Dashboard</a></li>
+        <li><a routerLink="/clients" routerLinkActive="active">Clients</a></li>
+        <li><a routerLink="/settings" routerLinkActive="active">Settings</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <main class="content">
+    <router-outlet></router-outlet>
+  </main>
+</div>
+
+<div class="fab-container" [class.active]="fabActive" id="fab-container">
+  <!-- Main Toggle Button -->
+  <button class="fab-main" (click)="toggleFab()" aria-label="Open Menu">
+    <span class="fab-icon">+</span>
+  </button>
+
+  <!-- Menu Options (Hidden by default) -->
+  <div class="fab-options">
+    <a routerLink="/invoices/new" class="fab-option" style="--delay: 0.1s;" title="New Invoice">
+      <span class="fab-label">Invoice</span>
+      <span class="fab-option-icon">📄</span>
+    </a>
+    <a routerLink="/clients/new" class="fab-option" style="--delay: 0.2s;" title="New Client">
+      <span class="fab-label">Client</span>
+      <span class="fab-option-icon">👤</span>
+    </a>
+  </div>
+</div>

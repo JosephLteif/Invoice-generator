@@ -1,0 +1,102 @@
+<div *ngIf="viewMode === 'list'">
+    <div class="page-header">
+        <h1>Clients</h1>
+        <a routerLink="/clients/new" class="btn btn-primary" style="display: none;">Add Client (Use FAB)</a>
+    </div>
+
+    <div class="card">
+        <h3>Client List</h3>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Email</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let client of clients">
+                        <td>{{ client.id }}</td>
+                        <td>
+                            <a [routerLink]="['/clients', client.id, 'invoices']"
+                                style="color: var(--primary-color); text-decoration: none; font-weight: 500;">
+                                {{ client.name }}
+                            </a>
+                        </td>
+                        <td>{{ client.category }}</td>
+                        <td>{{ client.email }}</td>
+                        <td>
+                            <a [routerLink]="['/clients', client.id, 'edit']" class="btn btn-sm btn-secondary"
+                                style="margin-right: 5px;">Edit</a>
+                            <button (click)="deleteClient(client.id!)" class="btn btn-sm btn-primary"
+                                style="background-color: #ef4444;">Delete</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div *ngIf="viewMode === 'details' && client">
+    <div class="card-header">
+        <h1>Invoices for {{ client.name }}</h1>
+        <a routerLink="/clients" class="btn btn-secondary">Back to Clients</a>
+    </div>
+
+    <div class="card" style="margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <label for="status">Filter by Status:</label>
+            <select id="status" [(ngModel)]="statusFilter" (change)="onFilterChange()"
+                style="padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
+                <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let inv of clientInvoices">
+                        <td>{{ inv.invoice_number }}</td>
+                        <td>{{ inv.date_issued }}</td>
+                        <td>
+                            <select [ngModel]="inv.status" (ngModelChange)="updateStatus(inv, $event)"
+                                class="status-badge" [ngClass]="'status-' + inv.status">
+                                <option value="Draft">Draft</option>
+                                <option value="Sent">Sent</option>
+                                <option value="Paid">Paid</option>
+                                <option value="Overdue">Overdue</option>
+                            </select>
+                        </td>
+                        <td>${{ inv.total_amount | number:'1.2-2' }}</td>
+                        <td>
+                            <a [href]="'http://localhost:5000/invoices/' + inv.invoice_number + '/pdf'"
+                                class="btn btn-sm btn-secondary" style="margin-right: 5px;">PDF</a>
+                            <a [routerLink]="['/invoices', inv.id, 'edit']" class="btn btn-sm btn-secondary"
+                                style="margin-right: 5px;">Edit</a>
+                            <button (click)="deleteInvoice(inv.id!)" class="btn btn-sm btn-primary"
+                                style="background-color: #ef4444;">Delete</button>
+                        </td>
+                    </tr>
+                    <tr *ngIf="clientInvoices.length === 0">
+                        <td colspan="5" style="text-align: center;">No invoices found for this status.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

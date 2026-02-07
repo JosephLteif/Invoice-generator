@@ -1,0 +1,61 @@
+<h1>Dashboard</h1>
+
+<div class="card">
+    <div class="card-header">
+        <h3 style="margin: 0;">Recent Invoices</h3>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <label for="status" style="font-size: 0.9rem;">Filter:</label>
+            <select id="status" [(ngModel)]="statusFilter" (change)="onFilterChange()"
+                style="padding: 5px; border-radius: 4px; border: 1px solid var(--border-color); font-size: 0.9rem; width: auto;">
+                <option *ngFor="let status of statuses" [value]="status">{{ status }}</option>
+            </select>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Invoice #</th>
+                    <th>Client</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Amount</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let inv of invoices">
+                    <td>{{ inv.invoice_number }}</td>
+                    <td>
+                        <a [routerLink]="['/clients', inv.client_id, 'invoices']"
+                            style="color: var(--primary-color); text-decoration: none; font-weight: 500;">
+                            {{ inv.client_name }}
+                        </a>
+                    </td>
+                    <td>{{ inv.date_issued }}</td>
+                    <td>
+                        <select [ngModel]="inv.status" (ngModelChange)="updateStatus(inv, $event)" class="status-badge"
+                            [ngClass]="'status-' + inv.status">
+                            <option value="Draft">Draft</option>
+                            <option value="Sent">Sent</option>
+                            <option value="Paid">Paid</option>
+                            <option value="Overdue">Overdue</option>
+                        </select>
+                    </td>
+                    <td>${{ inv.total_amount | number:'1.2-2' }}</td>
+                    <td>
+                        <a [href]="'http://localhost:5000/invoices/' + inv.invoice_number + '/pdf'"
+                            class="btn btn-sm btn-secondary" style="margin-right: 5px;">PDF</a>
+                        <a [routerLink]="['/invoices', inv.id, 'edit']" class="btn btn-sm btn-secondary"
+                            style="margin-right: 5px;">Edit</a>
+                        <button (click)="deleteInvoice(inv.id!)" class="btn btn-sm btn-primary"
+                            style="background-color: #ef4444;">Delete</button>
+                    </td>
+                </tr>
+                <tr *ngIf="invoices.length === 0">
+                    <td colspan="6" style="text-align: center;">No invoices found. Create one to get started!</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

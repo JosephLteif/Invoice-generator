@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, redirect, url_for, send_file
+from flask import Flask, request, jsonify, send_file
+from flask_cors import CORS
 import db_manager
 from pdf_builder import InvoicePDF
 import datetime
@@ -13,37 +14,44 @@ from models import db, Invoice, Client
 import requests
 from flask_apscheduler import APScheduler
 
-# Adjust template_folder and static_folder for PyInstaller
-if getattr(sys, 'frozen', False):
-    template_folder = os.path.join(sys._MEIPASS, 'templates')
-    static_folder = os.path.join(sys._MEIPASS, 'static')
-    app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
-else:
-    app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='')
+
+@app.route('/')
+def serve_angular():
+    return send_file('static/index.html')
+
+@app.route('/<path:path>')
+def serve_static_files(path):
+    # Check if file exists in static folder
+    if path.startswith('api/'):
+        return jsonify({'error': 'Not Found'}), 404
+    
+    if os.path.exists(os.path.join(app.static_folder, path)):
+        return send_file(os.path.join(app.static_folder, path))
+    
+    # Fallback to index.html for Angular routing
+    return send_file('static/index.html')
 
 # Database Config
 def get_db_path():
     if getattr(sys, 'frozen', False):
         base_path = os.path.dirname(sys.executable)
-        return os.path.join(base_path, 'invoices.db')
+        return os.path.join(base_path, 'data', 'invoices.db')
     else:
-        # In production (Docker), use the instance folder which is volume-mapped
+        # In production (Docker), use the mapped 'data' volume
         if os.environ.get('FLASK_ENV') == 'production':
-            # Ensure instance path exists
-            os.makedirs(app.instance_path, exist_ok=True)
-            return os.path.join(app.instance_path, 'invoices.db')
+            return os.path.join('/app', 'data', 'invoices.db')
             
-        # In dev, use the local directory (or instance if desired, but user has data in root)
+        # In dev, use the backend/data directory
         base_path = os.path.dirname(os.path.abspath(__file__))
-        # Check if instance db exists, else use root. 
-        # Actually, for simplicity and to match the user's existing "invoices.db" in root:
-        return os.path.join(base_path, 'invoices.db')
+        return os.path.join(base_path, 'data', 'invoices.db')
 
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{get_db_path()}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 migrate = Migrate(app, db)
+CORS(app) # Enable CORS for all routes
 scheduler = APScheduler()
 
 def send_discord_notification(webhook_url, invoice, client_name, type='reminder'):
@@ -162,131 +170,182 @@ with app.app_context():
 
     db_manager.init_db()
 
-@app.route('/')
-@app.route('/dashboard')
-def dashboard():
+@app.route('/api/invoices')
+def get_invoices():
     status_filter = request.args.get('status', 'All')
     invoices = db_manager.get_invoices(status=status_filter)
-    statuses = ['All', 'Draft', 'Paid', 'Sent', 'Overdue']
-    return render_template('index.html', 
-                          invoices=invoices, 
-                          statuses=statuses, 
-                          current_status=status_filter)
+    
+    # Serialize invoices (assuming db_manager returns objects or dicts)
+    # If they are SQLAlchemy objects, we need a serializer. 
+    # Based on index.html usage, they seem to be objects or dicts. 
+    # Let's inspect db_manager.py later to be sure. 
+    # For now, assuming db_manager.get_invoices returns a list of Invoice objects.
+    # We need to construct a list of dicts.
+    
+    invoices_data = []
+    for inv in invoices:
+        invoices_data.append({
+            'id': inv[0],
+            'invoice_number': inv[1],
+            'client_name': inv[2],
+            'date_issued': inv[3].isoformat() if inv[3] else None,
+            'status': inv[4],
+            'total_amount': inv[5],
+            'vat_exempt': inv[6],
+            'vat_exempt_reason': inv[7],
+            'client_id': inv[8]
+        })
+        
+    return jsonify(invoices_data)
 
-@app.route('/clients')
+@app.route('/api/clients', methods=['GET', 'POST'])
 def clients():
-    clients = db_manager.get_clients()
-    return render_template('clients.html', clients=clients)
-
-@app.route('/clients/new', methods=['GET', 'POST'])
-def add_client():
     if request.method == 'POST':
-        name = request.form.get('name')
-        address = request.form.get('address')
-        email = request.form.get('email')
-        phone = request.form.get('phone')
-        category = request.form.get('category')
+        data = request.json
+        name = data.get('name')
+        address = data.get('address')
+        email = data.get('email')
+        phone = data.get('phone')
+        category = data.get('category')
         db_manager.add_client(name, address, email, phone, category)
-        return redirect(url_for('clients'))
-    return render_template('add_client.html')
+        return jsonify({'message': 'Client added successfully'}), 201
+        
+    clients = db_manager.get_clients()
+    clients_data = []
+    # db_manager.get_clients returns a list of tuples or objects?
+    # Let's assume tuples based on the 'add_client' logic in app.py or objects.
+    # Actually models.py suggests objects (Client(db.Model)). 
+    # But checking app.py line 439: client = db_manager.get_client(client_id); client_name = client.name
+    # Wait, line 443 says: client_name = client[1].
+    # This implies db_manager returns tuples!
+    # I need to verify db_manager.py to be sure about the return structure.
+    # If it returns tuples, accessing by index is fragile.
+    # Let's assume it returns tuples for now based on line 443.
+    # (id, name, address, email, phone, category, created_at)
+    
+    for c in clients:
+        clients_data.append({
+            'id': c[0],
+            'name': c[1],
+            'address': c[2],
+            'email': c[3],
+            'phone': c[4],
+            'category': c[5]
+        })
+            
+    return jsonify(clients_data)
 
-@app.route('/clients/<int:client_id>/invoices')
+@app.route('/api/clients/<int:client_id>/invoices')
 def client_invoices(client_id):
     status_filter = request.args.get('status', 'All')
     client = db_manager.get_client(client_id)
     if not client:
-        return "Client not found", 404
+        return jsonify({'error': 'Client not found'}), 404
         
     invoices = db_manager.get_client_invoices(client_id, status=status_filter)
-    # Available statuses for filtering (could be dynamic but these are common)
-    statuses = ['All', 'Draft', 'Paid', 'Sent', 'Overdue']
     
-    return render_template('client_invoices.html', 
-                          client=client, 
-                          invoices=invoices, 
-                          current_status=status_filter,
-                          statuses=statuses)
+    # client is a tuple: (id, name, address, email, phone, category, created_at)
+    client_data = {
+        'id': client[0],
+        'name': client[1],
+        'address': client[2],
+        'email': client[3],
+        'phone': client[4],
+        'category': client[5]
+    }
+    
+    invoices_data = []
+    # get_client_invoices returns tuples: 
+    # (id, invoice_number, client_name, date_issued, status, total_amount, vat_exempt, vat_exempt_reason, client_id)
+    for inv in invoices:
+        invoices_data.append({
+            'id': inv[0],
+            'invoice_number': inv[1],
+            'client_name': inv[2],
+            'date_issued': inv[3].isoformat() if inv[3] else None,
+            'status': inv[4],
+            'total_amount': inv[5],
+            'vat_exempt': inv[6],
+            'vat_exempt_reason': inv[7],
+            'client_id': inv[8]
+        })
+    
+    return jsonify({
+        'client': client_data,
+        'invoices': invoices_data
+    })
 
-@app.route('/invoices/new', methods=['GET', 'POST'])
+@app.route('/api/invoices', methods=['POST'])
 def create_invoice():
-    if request.method == 'POST':
-        client_id = request.form.get('client_id')
-        invoice_number = request.form.get('invoice_number')
-        date_issued_str = request.form.get('date_issued')
-        due_date_str = request.form.get('due_date')
-        
-        date_issued = datetime.datetime.strptime(date_issued_str, '%Y-%m-%d').date() if date_issued_str else datetime.date.today()
-        due_date = datetime.datetime.strptime(due_date_str, '%Y-%m-%d').date() if due_date_str else date_issued + datetime.timedelta(days=14)
-        vat_exempt = request.form.get('vat_exempt') == 'true'
-        vat_exempt_reason = request.form.get('vat_exempt_reason')
-        status = request.form.get('status', 'Draft')
-        
-        # Process Items
-        descriptions = request.form.getlist('description[]')
-        quantities = request.form.getlist('quantity[]')
-        rates = request.form.getlist('rate[]')
-        
-        items = []
-        for i in range(len(descriptions)):
-            if descriptions[i]: # Only add if description is present
-                items.append({
-                    'description': descriptions[i],
-                    'quantity': float(quantities[i]),
-                    'rate': float(rates[i])
-                })
-        
-        if items:
-            db_manager.create_invoice(
-                client_id, invoice_number, date_issued, due_date, items, vat_exempt, vat_exempt_reason, status
-            )
-            return redirect(url_for('dashboard'))
-            
-    clients = db_manager.get_clients()
-    settings = db_manager.get_settings()
-    default_reason = settings.get('default_vat_exempt_reason', '')
-    return render_template('create_invoice.html', clients=clients, today=datetime.date.today(), default_reason=default_reason)
+    data = request.json
+    client_id = data.get('client_id')
+    invoice_number = data.get('invoice_number')
+    date_issued_str = data.get('date_issued')
+    due_date_str = data.get('due_date')
+    
+    date_issued = datetime.datetime.strptime(date_issued_str, '%Y-%m-%d').date() if date_issued_str else datetime.date.today()
+    due_date = datetime.datetime.strptime(due_date_str, '%Y-%m-%d').date() if due_date_str else date_issued + datetime.timedelta(days=14)
+    vat_exempt = data.get('vat_exempt')
+    vat_exempt_reason = data.get('vat_exempt_reason')
+    status = data.get('status', 'Draft')
+    
+    items = data.get('items', [])
+    # Validate items structure if needed, but assuming frontend sends correct format:
+    # [{'description': '...', 'quantity': 1, 'rate': 10}]
+    
+    if items:
+        # Map item keys if necessary or ensure backend expects what frontend sends
+        # db_manager expects list of dicts with 'description', 'quantity', 'rate'
+        db_manager.create_invoice(
+            client_id, invoice_number, date_issued, due_date, items, vat_exempt, vat_exempt_reason, status
+        )
+        return jsonify({'message': 'Invoice created successfully'}), 201
+    
+    return jsonify({'error': 'No items provided'}), 400
 
-@app.route('/settings', methods=['GET', 'POST'])
+@app.route('/api/settings', methods=['GET', 'POST'])
 def settings():
     if request.method == 'POST':
+        data = request.json
         settings_dict = {
-            'sender_name': request.form.get('sender_name'),
-            'sender_address_line1': request.form.get('sender_address_line1'),
-            'sender_address_line2': request.form.get('sender_address_line2'),
-            'sender_address_line3': request.form.get('sender_address_line3'),
-            'sender_email': request.form.get('sender_email'),
-            'sender_phone': request.form.get('sender_phone'),
-            'bank_iban': request.form.get('bank_iban'),
-            'bank_account_holder': request.form.get('bank_account_holder'),
-            'bank_swift': request.form.get('bank_swift'),
-            'vat_percentage': request.form.get('vat_percentage'),
-            'tax_id': request.form.get('tax_id'),
-            'default_vat_exempt_reason': request.form.get('default_vat_exempt_reason'),
-            'discord_webhook_url': request.form.get('discord_webhook_url'),
+            'sender_name': data.get('sender_name'),
+            'sender_address_line1': data.get('sender_address_line1'),
+            'sender_address_line2': data.get('sender_address_line2'),
+            'sender_address_line3': data.get('sender_address_line3'),
+            'sender_email': data.get('sender_email'),
+            'sender_phone': data.get('sender_phone'),
+            'bank_iban': data.get('bank_iban'),
+            'bank_account_holder': data.get('bank_account_holder'),
+            'bank_swift': data.get('bank_swift'),
+            'vat_percentage': data.get('vat_percentage'),
+            'tax_id': data.get('tax_id'),
+            'default_vat_exempt_reason': data.get('default_vat_exempt_reason'),
+            'discord_webhook_url': data.get('discord_webhook_url'),
         }
         db_manager.update_settings(settings_dict)
-        return redirect(url_for('settings'))
+        return jsonify({'message': 'Settings updated successfully'})
 
     current_settings = db_manager.get_settings()
-    return render_template('settings.html', settings=current_settings)
+    return jsonify(current_settings)
 
-@app.route('/settings/test-discord', methods=['POST'])
+@app.route('/api/settings/test-discord', methods=['POST'])
 def test_discord_webhook():
-    webhook_url = request.form.get('discord_webhook_url')
+    data = request.json
+    webhook_url = data.get('discord_webhook_url')
     if not webhook_url:
-        return "Missing Webhook URL", 400
+        return jsonify({"error": "Missing Webhook URL"}), 400
     
     try:
-        data = {
+        discord_data = {
             "content": "✅ **Test Notification**\nThis is a test message from Invoice Generator."
         }
-        resp = requests.post(webhook_url, json=data)
+        resp = requests.post(webhook_url, json=discord_data)
         if resp.status_code == 204 or resp.status_code == 200:
-            return "Test message sent successfully!"
+            return jsonify({"message": "Test message sent successfully!"})
         else:
-            return f"Discord returned error: {resp.status_code} {resp.text}", 500
+            return jsonify({"error": f"Discord returned error: {resp.status_code} {resp.text}"}), 500
     except Exception as e:
-        return f"Failed to send: {e}", 500
+        return jsonify({"error": f"Failed to send: {e}"}), 500
 
 @app.route('/settings/export')
 def export_data():
@@ -304,27 +363,27 @@ def export_data():
         mimetype='application/json'
     )
 
-@app.route('/settings/import', methods=['POST'])
+@app.route('/api/settings/import', methods=['POST'])
 def import_data():
     if 'file' not in request.files:
-        return "No file uploaded", 400
+        return jsonify({"error": "No file uploaded"}), 400
     
     file = request.files['file']
     if file.filename == '':
-        return "No file selected", 400
+        return jsonify({"error": "No file selected"}), 400
         
     if file:
         try:
             data = json.load(file)
             success, message = db_manager.import_data(data)
             if success:
-                return redirect(url_for('settings'))
+                return jsonify({"message": "Data imported successfully"})
             else:
-                return f"Error importing data: {message}", 500
+                return jsonify({"error": f"Error importing data: {message}"}), 500
         except json.JSONDecodeError:
-            return "Invalid JSON file", 400
+            return jsonify({"error": "Invalid JSON file"}), 400
             
-    return redirect(url_for('settings'))
+    return jsonify({"error": "Unknown error"}), 500
 
 @app.route('/invoices/<invoice_number>/pdf')
 def download_pdf(invoice_number):
@@ -341,7 +400,7 @@ def download_pdf(invoice_number):
     
     # Use absolute path for invoices directory
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    folder_path = os.path.join(base_dir, "invoices", safe_client_name)
+    folder_path = os.path.join(base_dir, "data", "invoices", safe_client_name)
     os.makedirs(folder_path, exist_ok=True)
     
     filename = f"{invoice_number}.pdf"
@@ -353,82 +412,85 @@ def download_pdf(invoice_number):
     
     return send_file(full_path, as_attachment=True)
 
-@app.route('/invoices/<invoice_number>/status', methods=['POST'])
+@app.route('/api/invoices/<invoice_number>/status', methods=['POST'])
 def update_status(invoice_number):
-    new_status = request.form.get('status')
+    data = request.json
+    new_status = data.get('status')
     if new_status:
         db_manager.update_invoice_status(invoice_number, new_status)
-    
-    # Redirect back to where the user came from
-    return redirect(request.referrer or url_for('dashboard'))
+        return jsonify({"message": f"Status updated to {new_status}"})
+    return jsonify({"error": "Status not provided"}), 400
 
-@app.route('/invoices/<invoice_number>/pay')
+@app.route('/api/invoices/<invoice_number>/pay', methods=['POST'])
 def mark_paid(invoice_number):
     db_manager.update_invoice_status(invoice_number, "Paid")
-    return redirect(url_for('dashboard'))
+    return jsonify({"message": "Invoice marked as Paid"})
 
-@app.route('/clients/<int:client_id>/edit', methods=['GET', 'POST'])
-def edit_client(client_id):
-    if request.method == 'POST':
-        name = request.form.get('name')
-        address = request.form.get('address')
-        email = request.form.get('email')
-        phone = request.form.get('phone')
-        category = request.form.get('category')
+@app.route('/api/clients/<int:client_id>', methods=['GET', 'PUT', 'DELETE'])
+def manage_client(client_id):
+    if request.method == 'DELETE':
+        db_manager.delete_client(client_id)
+        return jsonify({"message": "Client deleted successfully"})
+
+    if request.method == 'PUT':
+        data = request.json
+        name = data.get('name')
+        address = data.get('address')
+        email = data.get('email')
+        phone = data.get('phone')
+        category = data.get('category')
         db_manager.update_client(client_id, name, address, email, phone, category)
-        return redirect(url_for('clients'))
+        return jsonify({"message": "Client updated successfully"})
     
+    # GET
     client = db_manager.get_client(client_id)
-    return render_template('edit_client.html', client=client)
+    if not client:
+        return jsonify({"error": "Client not found"}), 404
+        
+    # client is tuple
+    return jsonify({
+        'id': client[0],
+        'name': client[1],
+        'address': client[2],
+        'email': client[3],
+        'phone': client[4],
+        'category': client[5]
+    })
 
-@app.route('/clients/<int:client_id>/delete')
-def delete_client(client_id):
-    db_manager.delete_client(client_id)
-    return redirect(url_for('clients'))
+@app.route('/api/invoices/<int:invoice_id>', methods=['GET', 'PUT', 'DELETE'])
+def manage_invoice(invoice_id):
+    if request.method == 'DELETE':
+        db_manager.delete_invoice(invoice_id)
+        return jsonify({"message": "Invoice deleted successfully"})
 
-@app.route('/invoices/<int:invoice_id>/delete')
-def delete_invoice(invoice_id):
-    db_manager.delete_invoice(invoice_id)
-    return redirect(url_for('dashboard'))
-
-@app.route('/invoices/<int:invoice_id>/edit', methods=['GET', 'POST'])
-def edit_invoice(invoice_id):
-    if request.method == 'POST':
-        client_id = request.form.get('client_id')
-        invoice_number = request.form.get('invoice_number')
-        date_issued_str = request.form.get('date_issued')
-        due_date_str = request.form.get('due_date')
+    if request.method == 'PUT':
+        data = request.json
+        client_id = data.get('client_id')
+        invoice_number = data.get('invoice_number')
+        date_issued_str = data.get('date_issued')
+        due_date_str = data.get('due_date')
         
         date_issued = datetime.datetime.strptime(date_issued_str, '%Y-%m-%d').date() if date_issued_str else datetime.date.today()
         due_date = datetime.datetime.strptime(due_date_str, '%Y-%m-%d').date() if due_date_str else date_issued + datetime.timedelta(days=14)
-        vat_exempt = request.form.get('vat_exempt') == 'true'
-        vat_exempt_reason = request.form.get('vat_exempt_reason')
-        status = request.form.get('status', 'Draft')
+        vat_exempt = data.get('vat_exempt')
+        vat_exempt_reason = data.get('vat_exempt_reason')
+        status = data.get('status', 'Draft')
         
-        descriptions = request.form.getlist('description[]')
-        quantities = request.form.getlist('quantity[]')
-        rates = request.form.getlist('rate[]')
-        
-        items = []
-        for i in range(len(descriptions)):
-            if descriptions[i]: 
-                items.append({
-                    'description': descriptions[i],
-                    'quantity': float(quantities[i]),
-                    'rate': float(rates[i])
-                })
+        items = data.get('items', [])
         
         if items:
             db_manager.update_invoice(
                 invoice_id, client_id, invoice_number, date_issued, due_date, items, vat_exempt, vat_exempt_reason, status
             )
-            return redirect(url_for('dashboard'))
+            return jsonify({"message": "Invoice updated successfully"})
+        return jsonify({"error": "No items provided"}), 400
 
+    # GET
     invoice = db_manager.get_invoice_by_id(invoice_id)
-    clients = db_manager.get_clients()
-    settings = db_manager.get_settings()
-    default_reason = settings.get('default_vat_exempt_reason', '')
-    return render_template('edit_invoice.html', invoice=invoice, clients=clients, default_reason=default_reason)
+    if not invoice:
+        return jsonify({"error": "Invoice not found"}), 404
+        
+    return jsonify(invoice)
 
 @app.route('/api/next-invoice-number')
 def next_invoice_number():

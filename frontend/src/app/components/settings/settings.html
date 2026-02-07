@@ -1,0 +1,157 @@
+<h1>Settings</h1>
+
+<div class="card" style="padding: 0; overflow: hidden; background: transparent; box-shadow: none; border: none;">
+    <!-- Tabs Navigation -->
+    <div class="tabs">
+        <button class="tab-btn" [class.active]="activeTab === 'general'"
+            (click)="setActiveTab('general')">General</button>
+        <button class="tab-btn" [class.active]="activeTab === 'finance'" (click)="setActiveTab('finance')">Finance &
+            Bank</button>
+        <button class="tab-btn" [class.active]="activeTab === 'notifications'"
+            (click)="setActiveTab('notifications')">Notifications</button>
+        <button class="tab-btn" [class.active]="activeTab === 'system'" (click)="setActiveTab('system')">System &
+            Data</button>
+    </div>
+
+    <!-- Main Settings Form -->
+    <form (ngSubmit)="onSubmit()">
+
+        <!-- Tab: General -->
+        <div *ngIf="activeTab === 'general'" class="tab-content active">
+            <div class="card">
+                <h3>Sender Information</h3>
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" name="sender_name" [(ngModel)]="settings.sender_name">
+                </div>
+                <div class="form-group">
+                    <label>Address Line 1</label>
+                    <input type="text" name="sender_address_line1" [(ngModel)]="settings.sender_address_line1">
+                </div>
+                <div class="form-group">
+                    <label>Address Line 2</label>
+                    <input type="text" name="sender_address_line2" [(ngModel)]="settings.sender_address_line2">
+                </div>
+                <div class="form-group">
+                    <label>Address Line 3</label>
+                    <input type="text" name="sender_address_line3" [(ngModel)]="settings.sender_address_line3">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="sender_email" [(ngModel)]="settings.sender_email">
+                </div>
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="text" name="sender_phone" [(ngModel)]="settings.sender_phone">
+                </div>
+                <div class="form-group">
+                    <label>Tax Identification Number</label>
+                    <input type="text" name="tax_id" [(ngModel)]="settings.tax_id">
+                </div>
+                <button type="submit" class="btn btn-primary">Save Settings</button>
+            </div>
+        </div>
+
+        <!-- Tab: Finance -->
+        <div *ngIf="activeTab === 'finance'" class="tab-content active">
+            <div class="card">
+                <h3>Bank Details</h3>
+                <div class="form-group">
+                    <label>IBAN</label>
+                    <input type="text" name="bank_iban" [(ngModel)]="settings.bank_iban">
+                </div>
+                <div class="form-group">
+                    <label>Account Holder Name (for Payment)</label>
+                    <input type="text" name="bank_account_holder" [(ngModel)]="settings.bank_account_holder">
+                </div>
+                <div class="form-group">
+                    <label>SWIFT / BIC</label>
+                    <input type="text" name="bank_swift" [(ngModel)]="settings.bank_swift">
+                </div>
+
+                <hr style="margin: 20px 0;">
+
+                <h3>Finance</h3>
+                <div class="form-group">
+                    <label>VAT Percentage (%)</label>
+                    <input type="number" name="vat_percentage" step="0.01" [(ngModel)]="settings.vat_percentage">
+                </div>
+                <div class="form-group">
+                    <label>Default VAT Exempt Message</label>
+                    <textarea name="default_vat_exempt_reason" rows="3"
+                        placeholder="Reason to display on PDF when VAT is 0%"
+                        [(ngModel)]="settings.default_vat_exempt_reason"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Settings</button>
+            </div>
+        </div>
+
+        <!-- Tab: Notifications -->
+        <div *ngIf="activeTab === 'notifications'" class="tab-content active">
+            <div class="card">
+                <h3>Notifications</h3>
+                <div class="form-group">
+                    <label>Discord Webhook URL</label>
+                    <input type="text" name="discord_webhook_url" [(ngModel)]="settings.discord_webhook_url"
+                        placeholder="https://discord.com/api/webhooks/...">
+                </div>
+
+                <div class="form-group form-row">
+                    <button type="submit" class="btn btn-primary">Save Settings</button>
+                    <button type="button" class="btn btn-secondary" (click)="testWebhook()" [disabled]="isTesting">{{
+                        testBtnText }}</button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- Tab: System -->
+    <div *ngIf="activeTab === 'system'" class="tab-content active">
+        <div class="card" style="background: transparent; box-shadow: none; border: none; padding: 0;">
+            <h3>Data Management</h3>
+            <div class="card-grid">
+                <!-- Export Card -->
+                <div class="data-card-wrapper">
+                    <div class="data-card">
+                        <h4>Export Data</h4>
+                        <p>Download a full backup of your clients, invoices, and settings as a JSON file.</p>
+                        <button type="button" class="btn btn-secondary" style="margin-top: auto; text-align: center;"
+                            (click)="downloadBackup()">Download Backup</button>
+                    </div>
+                </div>
+
+                <!-- Import Card -->
+                <div class="data-card-wrapper">
+                    <div class="data-card">
+                        <h4>Import Data</h4>
+                        <p>Restore data from a backup file. <strong>Warning: This overwrites all current data.</strong>
+                        </p>
+
+                        <div class="file-drop-area" (click)="fileInput.click()">
+                            <span class="fake-btn">Choose File</span>
+                            <span class="file-msg">or drag and drop here</span>
+                            <input type="file" #fileInput id="fileInput" name="file" accept=".json" style="display:none"
+                                (change)="onFileSelected($event)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr style="margin: 40px 0;">
+
+            <h3>Application Control</h3>
+            <div class="data-card" style="border-color: #f5c6cb; background: #fff8f8;">
+                <h4 style="color: #dc3545; border-bottom-color: #f5c6cb;">Danger Zone</h4>
+                <p>The application runs in the background. Use this button to fully terminate the process.</p>
+                <button type="button" class="btn btn-danger" (click)="shutdown()">Shutdown Application</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 1000;" *ngIf="message">
+    <div [style.backgroundColor]="messageType === 'success' ? '#28a745' : '#dc3545'"
+        style="padding: 15px 25px; margin-top: 10px; border-radius: 5px; color: #fff; font-weight: 500; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        {{ message }}
+    </div>
+</div>

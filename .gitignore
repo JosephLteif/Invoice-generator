@@ -11,21 +11,23 @@ instance/
 .webassets-cache
 .env
 
-# Database
-/invoices.db
+# Database and Data
+backend/data/
+*.db
+*.sqlite
 
 # IDEs
 .vscode/
 .idea/
 
-# Distribution
+# Distribution / Build
 dist/
 build/
 *.egg-info/
+frontend/dist/
+frontend/.angular/
+frontend/node_modules/
 
 # OS specific
 .DS_Store
 Thumbs.db
-
-# App specific
-/invoices/
